@@ -177,39 +177,27 @@ export default function AdminConsole() {
           </div>
 
           {/* Links navigation list */}
-          <nav className="flex flex-row md:flex-col flex-wrap gap-6">
-            
-            {/* Core directories */}
-            <div className="flex flex-col gap-1 min-w-[120px]">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">System</span>
-              <Link href="/" className="text-xs text-slate-500 hover:text-slate-900 transition-colors py-1">
-                Find Doctors
-              </Link>
-              <Link href="/doctor" className="text-xs text-slate-500 hover:text-slate-900 transition-colors py-1">
-                Therapist Area
-              </Link>
-              <Link href="/doctor/register" className="text-xs text-slate-500 hover:text-slate-900 transition-colors py-1">
-                Register Wizard
-              </Link>
-            </div>
-
-            {/* Dashboard switches */}
-            <div className="flex flex-col gap-1 min-w-[120px]">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Moderation</span>
-              <button 
-                onClick={() => setActiveTab("pipeline")}
-                className={`text-xs text-left py-1 transition-colors cursor-pointer ${activeTab === "pipeline" ? "text-slate-900 font-bold" : "text-slate-500 hover:text-slate-900"}`}
-              >
-                Verification Queue ({stats.pending})
-              </button>
-              <button 
-                onClick={() => setActiveTab("registry")}
-                className={`text-xs text-left py-1 transition-colors cursor-pointer ${activeTab === "registry" ? "text-slate-900 font-bold" : "text-slate-500 hover:text-slate-900"}`}
-              >
-                Clinic Database
-              </button>
-            </div>
-
+          <nav className="flex flex-col gap-4">
+            <button 
+              onClick={() => setActiveTab("pipeline")}
+              className={`text-sm sm:text-base text-left py-2 font-semibold transition-colors cursor-pointer block border-l-2 pl-3 -ml-3 ${
+                activeTab === "pipeline" 
+                  ? "text-slate-950 border-slate-950 font-bold" 
+                  : "text-slate-400 border-transparent hover:text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              Verification Queue ({stats.pending})
+            </button>
+            <button 
+              onClick={() => setActiveTab("registry")}
+              className={`text-sm sm:text-base text-left py-2 font-semibold transition-colors cursor-pointer block border-l-2 pl-3 -ml-3 ${
+                activeTab === "registry" 
+                  ? "text-slate-950 border-slate-950 font-bold" 
+                  : "text-slate-400 border-transparent hover:text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              Clinic Database
+            </button>
           </nav>
         </div>
 
