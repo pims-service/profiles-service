@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+}
+
+@theme {
+  --color-primary: #10b981; /* Calming Emerald */
+  --color-primary-light: #ecfdf5;
+  --color-primary-dark: #065f46;
+  --color-secondary: #0ea5e9; /* Sky Blue accent */
+  --color-accent: #f59e0b; /* Amber reviews star */
+  
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-display: 'Outfit', sans-serif;
+}
+
+body {
+  background-color: #f8fafc; /* Tailwind slate-50 */
+  color: #0f172a; /* slate-900 */
+  font-family: var(--font-sans);
+}
+
+/* Custom global scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981; /* emerald-500 */
+}

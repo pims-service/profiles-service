@@ -1,0 +1,108 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String              @id @default(uuid())
+  email        String              @unique
+  passwordHash String
+  name         String
+  role         String              // "PATIENT" | "PSYCHIATRIST" | "ADMIN"
+  createdAt    DateTime            @default(now())
+  profile      PsychiatristProfile?
+}
+
+model PsychiatristProfile {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Credentials & Licensing
+  licenseType        String             // "MD" | "DO" | "PMHNP" | "PhD" | "PsyD"
+  licenseState       String
+  licenseNumber      String
+  npiNumber          String
+  isVerified         Boolean            @default(false)
+  verificationStatus String             // "PENDING" | "APPROVED" | "REJECTED"
+  rejectionReason    String?
+  licenseDocUrl      String?            // Local uploaded document path
+
+  // Practice Location (Geospatial metadata)
+  clinicName         String
+  address            String
+  city               String
+  state              String
+  zipCode            String
+  latitude           Float
+  longitude          Float
+
+  // Specialties & Treatments
+  specialties        String             // JSON array string of specialties (e.g. ["ADHD", "Anxiety", "Bipolar"])
+  treatmentModalities String            // JSON array string of modalities (e.g. ["CBT", "EMDR", "Medication"])
+  targetDemographics String             // JSON array string of ages/groups (e.g. ["Adolescents", "Adults"])
+  languages          String             // JSON array string of languages (e.g. ["English", "Spanish"])
+
+  // Bio & Media
+  bioPreview         String             // Short elevator pitch (max 270 chars) - crucial for SEO/results
+  bioFull            String             // Detailed narrative
+  headshotUrl        String             // Profile photo path
+  introVideoUrl      String?            // Optional video intro link
+
+  // Financials & Session Formats
+  sessionFormat      String             // "IN_PERSON" | "TELEHEALTH" | "HYBRID"
+  sessionFee         Float
+  slidingScale       Boolean            @default(false)
+  acceptedInsurances String             // JSON array string of accepted insurances
+
+  // Algorithm Ranking Metrics
+  searchScore        Int                @default(0) // Real-time calculation out of 100
+  isSponsored        Boolean            @default(false)
+  lastActive         DateTime           @default(now())
+  isSuspended        Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  reviews            Review[]
+  availability       AvailabilitySlot[]
+  bookings           Booking[]
+}
+
+model Review {
+  id             String              @id @default(uuid())
+  psychiatristId String
+  profile        PsychiatristProfile @relation(fields: [psychiatristId], references: [id], onDelete: Cascade)
+  patientName    String
+  rating         Int                 // 1 to 5 stars
+  comment        String
+  isApproved     Boolean             @default(true) // Auto-moderated or manual review options
+  createdAt      DateTime            @default(now())
+}
+
+model AvailabilitySlot {
+  id             String              @id @default(uuid())
+  psychiatristId String
+  profile        PsychiatristProfile @relation(fields: [psychiatristId], references: [id], onDelete: Cascade)
+  startTime      DateTime
+  endTime        DateTime
+  isBooked       Boolean             @default(false)
+  bookings       Booking[]
+}
+
+model Booking {
+  id             String              @id @default(uuid())
+  psychiatristId String
+  profile        PsychiatristProfile @relation(fields: [psychiatristId], references: [id], onDelete: Cascade)
+  patientName    String
+  patientEmail   String
+  patientPhone   String
+  insurance      String?
+  slotId         String
+  slot           AvailabilitySlot    @relation(fields: [slotId], references: [id])
+  status         String              // "PENDING" | "CONFIRMED" | "CANCELLED"
+  createdAt      DateTime            @default(now())
+}
