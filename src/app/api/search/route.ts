@@ -9,6 +9,8 @@ export async function GET(request: Request) {
     
     // Parse filters
     const locationQuery = searchParams.get("location") || "";
+    const latParam = searchParams.get("lat");
+    const lngParam = searchParams.get("lng");
     const distanceLimit = parseFloat(searchParams.get("distance") || "25");
     const specialty = searchParams.get("specialty") || "";
     const insurance = searchParams.get("insurance") || "";
@@ -17,7 +19,7 @@ export async function GET(request: Request) {
     const maxFee = parseFloat(searchParams.get("maxFee") || "9999");
     const sortBy = searchParams.get("sort") || "best_match";
 
-    // 1. Query all APPROVED and verified psychiatrist profiles from Prisma
+    // Query active verified providers
     const doctors = await prisma.psychiatristProfile.findMany({
       where: {
         verificationStatus: "APPROVED",
@@ -29,33 +31,38 @@ export async function GET(request: Request) {
       },
     });
 
-    // 2. Geolocation Matching
+    // 1. Determine Search Origin
     let originCoords: { lat: number; lng: number } | null = null;
-    if (locationQuery) {
+    let resolvedName = "";
+
+    if (latParam && lngParam) {
+      originCoords = {
+        lat: parseFloat(latParam),
+        lng: parseFloat(lngParam),
+      };
+      resolvedName = "Current Geolocation Location";
+    } else if (locationQuery) {
       const resolved = resolveLocation(locationQuery);
       if (resolved) {
         originCoords = { lat: resolved.lat, lng: resolved.lng };
+        resolvedName = resolved.name;
       }
     }
 
-    // 3. Map, compute and filter profiles
+    // 2. Compute metrics and dynamic ratings
     let results = doctors.map(doc => {
-      // Calculate real-time search score out of 100
       const score = calculateProfileScore(doc);
       
-      // Calculate distance if search coordinates are resolved
       let distance = 9999;
       if (originCoords) {
         distance = calculateDistance(originCoords.lat, originCoords.lng, doc.latitude, doc.longitude);
       }
 
-      // Calculate rating
       const reviews = doc.reviews || [];
       const avgRating = reviews.length > 0 
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length 
         : 0;
 
-      // Parse JSON fields
       let specialtiesList: string[] = [];
       let insurancesList: string[] = [];
       try { specialtiesList = JSON.parse(doc.specialties || "[]"); } catch {}
@@ -72,27 +79,23 @@ export async function GET(request: Request) {
       };
     });
 
-    // 4. Apply Filters
-    // Location Distance filter
+    // 3. Apply active filters
     if (originCoords) {
       results = results.filter(doc => doc.computedDistance <= distanceLimit);
     }
 
-    // Specialty filter
     if (specialty) {
       results = results.filter(doc => 
         doc.specialtiesList.some(s => s.toLowerCase() === specialty.toLowerCase())
       );
     }
 
-    // Insurance filter
     if (insurance) {
       results = results.filter(doc => 
         doc.insurancesList.some(i => i.toLowerCase() === insurance.toLowerCase())
       );
     }
 
-    // Format filter ("IN_PERSON", "TELEHEALTH", "HYBRID")
     if (format && format !== "ANY") {
       results = results.filter(doc => {
         if (format === "TELEHEALTH") return doc.sessionFormat === "TELEHEALTH" || doc.sessionFormat === "HYBRID";
@@ -101,12 +104,11 @@ export async function GET(request: Request) {
       });
     }
 
-    // Fee range filter
     if (minFee > 0 || maxFee < 9999) {
       results = results.filter(doc => doc.sessionFee >= minFee && doc.sessionFee <= maxFee);
     }
 
-    // 5. Apply Sorting Logics
+    // 4. Perform sorting
     if (sortBy === "distance" && originCoords) {
       results.sort((a, b) => a.computedDistance - b.computedDistance);
     } else if (sortBy === "rating") {
@@ -116,8 +118,7 @@ export async function GET(request: Request) {
     } else if (sortBy === "price_high") {
       results.sort((a, b) => b.sessionFee - a.sessionFee);
     } else {
-      // Default: best_match (Standard market sorting)
-      // Boost sponsored listings to the top, then sort by computedScore descending
+      // Default standard marketplace sorting
       results.sort((a, b) => {
         if (a.isSponsored && !b.isSponsored) return -1;
         if (!a.isSponsored && b.isSponsored) return 1;
@@ -127,14 +128,14 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      resolvedLocation: originCoords ? locationQuery : null,
+      resolvedLocationName: resolvedName,
       resultsCount: results.length,
       data: results,
     });
   } catch (error: any) {
-    console.error("🚨 Search API Error:", error);
+    console.error("🚨 Search API GPS Error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to perform search operations." },
+      { success: false, error: "Search execution error." },
       { status: 500 }
     );
   }

@@ -43,12 +43,11 @@ export default function AdminConsole() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("pipeline"); // "pipeline" | "registry"
   
-  // Rejection modal states
+  // Rejection modal
   const [selectedDocForRejection, setSelectedDocForRejection] = useState<Doctor | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
 
-  // Search filter inside registry
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchModerationData = async () => {
@@ -61,7 +60,7 @@ export default function AdminConsole() {
         setStats(data.stats);
       }
     } catch (err) {
-      console.error("Failed to load admin directories:", err);
+      console.error("Failed to load admin logs:", err);
     } finally {
       setLoading(false);
     }
@@ -71,9 +70,8 @@ export default function AdminConsole() {
     fetchModerationData();
   }, []);
 
-  // Approve Doctor listing
   const handleApprove = async (docId: string) => {
-    if (!confirm("Confirm approval of this provider credentials and license files?")) return;
+    if (!confirm("Confirm approval of this provider credentials and state board registry files?")) return;
 
     try {
       const res = await fetch("/api/admin/moderation", {
@@ -83,17 +81,14 @@ export default function AdminConsole() {
       });
       const data = await res.json();
       if (data.success) {
-        // Update local state
         setDoctors(prev => prev.map(d => d.id === docId ? data.data : d));
-        // Refetch stats
         fetchModerationData();
       }
-    } catch (err) {
+    } catch {
       alert("Error approving provider listing.");
     }
   };
 
-  // Submit Rejection
   const handleRejectionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDocForRejection || !rejectionReason) return;
@@ -114,7 +109,6 @@ export default function AdminConsole() {
         setDoctors(prev => prev.map(d => d.id === selectedDocForRejection.id ? data.data : d));
         setSelectedDocForRejection(null);
         setRejectionReason("");
-        // Refetch stats
         fetchModerationData();
       }
     } catch {
@@ -124,10 +118,9 @@ export default function AdminConsole() {
     }
   };
 
-  // Toggle Suspend Status
   const handleToggleSuspend = async (docId: string, currentStatus: boolean) => {
-    const act = currentStatus ? "reinstate" : "suspend";
-    if (!confirm(`Are you sure you want to ${act} this psychiatrist listing?`)) return;
+    const act = currentStatus ? "activate" : "suspend";
+    if (!confirm(`Are you sure you want to ${act} this psychiatrist search card?`)) return;
 
     try {
       const res = await fetch("/api/admin/moderation", {
@@ -145,7 +138,6 @@ export default function AdminConsole() {
     }
   };
 
-  // Filter doctor registry
   const filteredRegistry = doctors.filter(doc => {
     const query = searchQuery.toLowerCase();
     return (
@@ -159,182 +151,127 @@ export default function AdminConsole() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "120px", color: "var(--text-muted)" }}>
-        🌀 Initializing Admin Console...
+      <div className="text-center py-24 text-slate-500 font-medium">
+        🌀 Preparing directory administrative clearance...
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "90vh", background: "var(--bg-main)", padding: "40px 20px" }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+    <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
         
-        {/* Console Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+        {/* Title header */}
+        <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <div>
-            <h1 style={{ fontSize: "2.2rem" }}>Control Panel Center</h1>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Moderating practitioner registrations and licensing verifications</p>
+            <h1 className="font-display text-2xl font-extrabold text-slate-900">Console Control Panel</h1>
+            <p className="text-xs text-slate-500 mt-0.5">Moderating psychiatrist registry and license verifications</p>
           </div>
-          <span className="badge badge-primary" style={{ padding: "8px 14px", fontSize: "0.8rem" }}>
-            🔑 Administrator Clearance
+          <span className="text-[10px] font-bold bg-slate-900 text-white px-3 py-1 rounded-full uppercase tracking-wider">
+            Clearance: Administrator
           </span>
         </div>
 
-        {/* Dynamic Statistics cards grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "40px" }}>
-          
-          <div className="glass-panel" style={{ padding: "20px", background: "var(--bg-card)" }}>
-            <span style={{ fontSize: "1.8rem" }}>👥</span>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 800, marginTop: "10px" }}>Total Accounts</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--text-main)" }}>{stats.total}</div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: "20px", background: "var(--bg-card)", borderLeft: "3.5px solid var(--accent)" }}>
-            <span style={{ fontSize: "1.8rem" }}>⏳</span>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 800, marginTop: "10px" }}>Pending Review</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--accent)" }}>{stats.pending}</div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: "20px", background: "var(--bg-card)", borderLeft: "3.5px solid var(--success)" }}>
-            <span style={{ fontSize: "1.8rem" }}>✅</span>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 800, marginTop: "10px" }}>Verified Listing</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--success)" }}>{stats.approved}</div>
-          </div>
-
-          <div className="glass-panel" style={{ padding: "20px", background: "var(--bg-card)", borderLeft: "3.5px solid var(--danger)" }}>
-            <span style={{ fontSize: "1.8rem" }}>🚫</span>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 800, marginTop: "10px" }}>Suspended Cards</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--danger)" }}>{stats.suspended}</div>
-          </div>
-
+        {/* Stats widgets */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: "Total Registered", val: stats.total, color: "border-slate-200" },
+            { label: "Pending Verification", val: stats.pending, color: "border-amber-400 text-amber-600 bg-amber-50/20" },
+            { label: "Verified Directory", val: stats.approved, color: "border-emerald-400 text-emerald-600 bg-emerald-50/20" },
+            { label: "Suspended Cards", val: stats.suspended, color: "border-red-400 text-red-600 bg-red-50/20" }
+          ].map((item, idx) => (
+            <div key={idx} className={`bg-white border rounded-xl p-4 shadow-sm ${item.color}`}>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</div>
+              <div className="text-xl font-black mt-1">{item.val}</div>
+            </div>
+          ))}
         </div>
 
-        {/* Navigation Tab Menu */}
-        <div style={{ display: "flex", borderBottom: "1px solid var(--border-color)", gap: "20px", marginBottom: "30px" }}>
+        {/* Tab Selector */}
+        <div className="flex border-b border-slate-200 gap-6 mb-8">
           <button 
             onClick={() => setActiveTab("pipeline")}
-            style={{
-              padding: "12px 6px",
-              background: "transparent",
-              border: "none",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "1rem",
-              color: activeTab === "pipeline" ? "var(--primary)" : "var(--text-muted)",
-              borderBottom: activeTab === "pipeline" ? "3px solid var(--primary)" : "3px solid transparent",
-              cursor: "pointer",
-              transition: "var(--transition)"
-            }}
+            className={`pb-3 font-semibold text-xs uppercase cursor-pointer border-b-2 transition-all ${activeTab === 'pipeline' ? 'text-emerald-600 border-emerald-500' : 'text-slate-400 border-transparent hover:text-slate-700'}`}
           >
-            📋 Moderation Queue ({stats.pending})
+            📋 Verification Queue ({stats.pending})
           </button>
           <button 
             onClick={() => setActiveTab("registry")}
-            style={{
-              padding: "12px 6px",
-              background: "transparent",
-              border: "none",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "1rem",
-              color: activeTab === "registry" ? "var(--primary)" : "var(--text-muted)",
-              borderBottom: activeTab === "registry" ? "3px solid var(--primary)" : "3px solid transparent",
-              cursor: "pointer",
-              transition: "var(--transition)"
-            }}
+            className={`pb-3 font-semibold text-xs uppercase cursor-pointer border-b-2 transition-all ${activeTab === 'registry' ? 'text-emerald-600 border-emerald-500' : 'text-slate-400 border-transparent hover:text-slate-700'}`}
           >
-            🗂️ Active Registry Database
+            🗂️ Registry Database
           </button>
         </div>
 
-        {/* Tab Content Display */}
-        <div className="animated-fade">
+        {/* Tab panels */}
+        <div className="animate-fade">
           
-          {/* Moderation Queue Pipeline */}
+          {/* Queue Tab */}
           {activeTab === "pipeline" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div className="flex flex-col gap-6">
               {pendingDoctors.length === 0 ? (
-                <div className="glass-panel" style={{ padding: "60px 40px", textAlign: "center", background: "var(--bg-card)" }}>
-                  <span style={{ fontSize: "3.5rem" }}>🌿</span>
-                  <h3 style={{ margin: "20px 0 8px" }}>Clean Moderation Pipeline</h3>
-                  <p style={{ color: "var(--text-muted)" }}>No provider registration credentials require pending verification.</p>
+                <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm">
+                  <span className="text-3xl">🌿</span>
+                  <h3 className="font-bold text-sm text-slate-900 mt-4 mb-1">Queue Pipeline is Clean</h3>
+                  <p className="text-slate-500 text-xs">All pending provider licenses are cross-verified and resolved.</p>
                 </div>
               ) : (
-                pendingDoctors.map((doc) => (
-                  <div key={doc.id} className="glass-panel animated-fade" style={{ background: "var(--bg-card)", padding: "30px", display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: "30px" }}>
+                pendingDoctors.map(doc => (
+                  <div key={doc.id} className="bg-white border border-slate-200 rounded-2xl p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 shadow-sm">
                     
-                    {/* Credentials Info Column */}
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                        <span className="badge badge-pending">PENDING AUDIT</span>
-                        <span className="badge badge-secondary">{doc.licenseType} APPLICATION</span>
+                    {/* Information */}
+                    <div className="lg:col-span-8">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[9px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">CREDENTIAL REVIEW</span>
+                        <span className="text-[9px] font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{doc.licenseType}</span>
                       </div>
 
-                      <h2 style={{ fontSize: "1.45rem", marginBottom: "4px" }}>{doc.user.name}</h2>
-                      <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "16px" }}>
-                        Clinical practice: <strong>{doc.clinicName}</strong> &bull; {doc.city}, {doc.state}
-                      </div>
+                      <h2 className="font-display font-bold text-base text-slate-900">{doc.user.name}</h2>
+                      <p className="text-xs text-slate-500 mt-0.5">{doc.clinicName} &bull; {doc.city}, {doc.state}</p>
 
-                      {/* Licensing parameters metadata */}
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", background: "var(--bg-main)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-color)", marginBottom: "20px", fontSize: "0.88rem" }}>
+                      {/* License metrics */}
+                      <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100 p-4 rounded-xl mt-4 text-xs">
                         <div>
-                          <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 700 }}>NPI Registry Code</span>
+                          <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">NPI Number Code</span>
                           <strong>{doc.npiNumber}</strong>
-                          <span style={{ color: "var(--success)", fontSize: "0.7rem", display: "block" }}>✓ Valid NPI format</span>
+                          <span className="block text-[10px] text-emerald-600 mt-0.5">✓ Valid NPI schema</span>
                         </div>
                         <div>
-                          <span style={{ color: "var(--text-muted)", display: "block", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 700 }}>State Board License</span>
+                          <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">State License</span>
                           <strong>{doc.licenseNumber} ({doc.licenseState})</strong>
-                          <span style={{ color: "var(--primary)", fontSize: "0.7rem", display: "block" }}>Active standing</span>
+                          <span className="block text-[10px] text-emerald-600 mt-0.5">✓ active state ledger</span>
                         </div>
                       </div>
 
-                      {/* Bio review */}
-                      <div>
-                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem", fontWeight: 700, display: "block", marginBottom: "6px" }}>Narrative Statement:</span>
-                        <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", background: "var(--bg-main)", padding: "12px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
-                          "{doc.bioPreview}"
-                        </p>
+                      <div className="mt-4">
+                        <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Statement Preview:</span>
+                        <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">"{doc.bioPreview}"</p>
                       </div>
                     </div>
 
-                    {/* PDF License document viewer Column */}
-                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%", borderLeft: "1px solid var(--border-color)", paddingLeft: "30px" }}>
+                    {/* PDF viewer controls */}
+                    <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-slate-100 pt-6 lg:pt-0 lg:pl-6 flex flex-col justify-between">
                       <div>
-                        <div style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: "10px" }}>Uploaded Document Records</div>
-                        
-                        {/* Mock PDF Card element */}
-                        <div style={{
-                          background: "linear-gradient(135deg, hsl(210,30%,98%), hsl(210,24%,92%))",
-                          border: "1.5px solid var(--border-color)",
-                          borderRadius: "8px",
-                          padding: "16px",
-                          textAlign: "center",
-                          position: "relative",
-                          overflow: "hidden"
-                        }}>
-                          <span style={{ fontSize: "2rem" }}>📄</span>
-                          <div style={{ fontWeight: 800, fontSize: "0.8rem", color: "var(--text-main)", marginTop: "4px" }}>LICENSE_CERTIFICATE_{doc.licenseState}.PDF</div>
-                          <div style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Verified MD State Registration PDF &bull; 2.4 MB</div>
-                          <div style={{ display: "inline-block", background: "var(--primary)", color: "white", padding: "3px 6px", fontSize: "0.6rem", fontWeight: 700, borderRadius: "4px", marginTop: "8px", textTransform: "uppercase" }}>Scan: PASS</div>
+                        <span className="block text-[11px] font-bold text-slate-700 mb-2">Uploaded PDF Records</span>
+                        <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-4 text-center">
+                          <span className="text-2xl">📄</span>
+                          <strong className="block text-[10px] text-slate-900 mt-1 truncate">LICENSE_{doc.licenseState}.PDF</strong>
+                          <span className="text-[9px] text-slate-400">Scan status: <strong className="text-emerald-600">PASS (2.4MB)</strong></span>
                         </div>
                       </div>
 
-                      {/* Approval triggers */}
-                      <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+                      <div className="flex gap-2.5 mt-6">
                         <button 
                           onClick={() => setSelectedDocForRejection(doc)}
-                          className="btn btn-secondary" 
-                          style={{ border: "1px solid var(--danger)", color: "var(--danger)", flexGrow: 1, padding: "10px" }}
+                          className="flex-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 py-2.5 rounded-lg cursor-pointer"
                         >
-                          Reject application
+                          Reject
                         </button>
                         <button 
                           onClick={() => handleApprove(doc.id)}
-                          className="btn btn-primary" 
-                          style={{ flexGrow: 1, padding: "10px" }}
+                          className="flex-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-2.5 rounded-lg cursor-pointer"
                         >
-                          Approve Listing
+                          Approve
                         </button>
                       </div>
                     </div>
@@ -345,91 +282,71 @@ export default function AdminConsole() {
             </div>
           )}
 
-          {/* Active Registry Database Grid */}
+          {/* Database active registry tab */}
           {activeTab === "registry" && (
-            <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-              {/* Search Bar */}
-              <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-                <input 
-                  type="text" 
-                  placeholder="Search practitioner registry by name, clinic, or city..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="form-input" 
-                  style={{ maxWidth: "450px" }}
-                />
-              </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <input 
+                type="text" 
+                placeholder="Search database by doctor name, clinic office, or city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none mb-6 max-w-md focus:border-emerald-500 focus:bg-white"
+              />
 
               {filteredRegistry.length === 0 ? (
-                <p style={{ color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "40px" }}>
-                  No directory records match your search phrase.
-                </p>
+                <p className="text-slate-400 text-xs italic text-center py-12">No database entries matched your search query.</p>
               ) : (
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.9rem" }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr style={{ borderBottom: "2px solid var(--border-color)", color: "var(--text-muted)" }}>
-                        <th style={{ padding: "12px" }}>Practitioner Info</th>
-                        <th style={{ padding: "12px" }}>NPI Code</th>
-                        <th style={{ padding: "12px" }}>Clinic Location</th>
-                        <th style={{ padding: "12px" }}>Search Score</th>
-                        <th style={{ padding: "12px" }}>Credential Standing</th>
-                        <th style={{ padding: "12px", textAlign: "right" }}>Listing Controls</th>
+                      <tr className="border-b border-slate-200 text-slate-400">
+                        <th className="pb-3 pt-1 pl-2">Practitioner</th>
+                        <th className="pb-3 pt-1">NPI Number</th>
+                        <th className="pb-3 pt-1">Clinic Address</th>
+                        <th className="pb-3 pt-1">Search Score</th>
+                        <th className="pb-3 pt-1">Credential Standing</th>
+                        <th className="pb-3 pt-1 pr-2 text-right">Listing Controls</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRegistry.map((doc) => (
-                        <tr key={doc.id} style={{ borderBottom: "1px solid var(--border-color)", background: doc.isSuspended ? "rgba(220,53,69,0.03)" : "transparent" }}>
+                      {filteredRegistry.map(doc => (
+                        <tr key={doc.id} className={`border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 ${doc.isSuspended ? 'bg-red-50/10' : ''}`}>
                           
-                          {/* Practitioner Info */}
-                          <td style={{ padding: "12px", display: "flex", gap: "12px", alignItems: "center" }}>
-                            <img src={doc.headshotUrl} alt={doc.user.name} style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} />
+                          <td className="py-4 pl-2 flex items-center gap-3">
+                            <img src={doc.headshotUrl} alt={doc.user.name} className="w-8 h-8 rounded-full object-cover border border-slate-100" />
                             <div>
-                              <strong style={{ display: "block" }}>{doc.user.name}, {doc.licenseType}</strong>
-                              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{doc.user.email}</span>
+                              <strong className="block text-slate-950">{doc.user.name}, {doc.licenseType}</strong>
+                              <span className="text-[10px] text-slate-400">{doc.user.email}</span>
                             </div>
                           </td>
 
-                          {/* NPI */}
-                          <td style={{ padding: "12px" }}>{doc.npiNumber}</td>
+                          <td className="py-4 text-slate-500 font-mono">{doc.npiNumber}</td>
 
-                          {/* Location */}
-                          <td style={{ padding: "12px" }}>
-                            <div>{doc.clinicName}</div>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{doc.city}, {doc.state}</span>
+                          <td className="py-4">
+                            <div className="font-semibold text-slate-800">{doc.clinicName}</div>
+                            <span className="text-[10px] text-slate-400">{doc.city}, {doc.state}</span>
                           </td>
 
-                          {/* Score */}
-                          <td style={{ padding: "12px" }}>
-                            <strong style={{ color: "var(--primary)" }}>{doc.searchScore}/100</strong>
-                          </td>
+                          <td className="py-4 text-emerald-600 font-bold">{doc.searchScore}/100</td>
 
-                          {/* Standing */}
-                          <td style={{ padding: "12px" }}>
+                          <td className="py-4">
                             {doc.isSuspended ? (
-                              <span className="badge badge-rejected" style={{ background: "hsl(354,76%,92%)", color: "var(--danger)" }}>SUSPENDED</span>
+                              <span className="text-[9px] font-bold bg-red-50 text-red-700 px-2 py-0.5 rounded-full">SUSPENDED</span>
                             ) : doc.verificationStatus === "APPROVED" ? (
-                              <span className="badge badge-verified">VERIFIED</span>
+                              <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">VERIFIED</span>
                             ) : doc.verificationStatus === "PENDING" ? (
-                              <span className="badge badge-pending">PENDING</span>
+                              <span className="text-[9px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">PENDING</span>
                             ) : (
-                              <span className="badge badge-rejected">REJECTED</span>
+                              <span className="text-[9px] font-bold bg-red-50 text-red-700 px-2 py-0.5 rounded-full">REJECTED</span>
                             )}
                           </td>
 
-                          {/* Controls */}
-                          <td style={{ padding: "12px", textAlign: "right" }}>
+                          <td className="py-4 pr-2 text-right">
                             <button 
                               onClick={() => handleToggleSuspend(doc.id, doc.isSuspended)}
-                              className="btn btn-secondary" 
-                              style={{ 
-                                padding: "6px 12px", 
-                                fontSize: "0.75rem",
-                                color: doc.isSuspended ? "var(--success)" : "var(--danger)",
-                                borderColor: doc.isSuspended ? "var(--success)" : "var(--danger)",
-                              }}
+                              className={`text-[10px] font-bold border rounded-lg px-2.5 py-1 transition-all cursor-pointer ${doc.isSuspended ? 'text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100' : 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100'}`}
                             >
-                              {doc.isSuspended ? "Activate Card" : "Suspend Card"}
+                              {doc.isSuspended ? "Re-Activate" : "Suspend Listing"}
                             </button>
                           </td>
 
@@ -446,82 +363,61 @@ export default function AdminConsole() {
 
       </div>
 
-      {/* Rejection Reasons Form Modal */}
+      {/* Flag / Rejection Reason modal */}
       {selectedDocForRejection && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(4px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-        }}>
-          <div className="glass-panel animated-fade" style={{
-            background: "var(--bg-card)",
-            width: "100%",
-            maxWidth: "450px",
-            padding: "30px",
-            borderRadius: "var(--radius-md)",
-            border: "1.5px solid var(--border-color)",
-            boxShadow: "var(--shadow-lg)"
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "1.25rem" }}>Flag & Reject Application</h3>
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 border border-slate-100 shadow-2xl relative animate-fade">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-display font-bold text-base text-slate-900">Flag Application</h3>
               <button 
                 onClick={() => setSelectedDocForRejection(null)}
-                style={{ background: "transparent", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "var(--text-muted)" }}
+                className="text-slate-400 hover:text-slate-700 text-xl font-bold p-1 cursor-pointer"
               >
                 &times;
               </button>
             </div>
 
-            <form onSubmit={handleRejectionSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <form onSubmit={handleRejectionSubmit} className="flex flex-col gap-4">
               <div>
-                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "8px" }}>Select Rejection Reason Checklist</label>
+                <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Administrative Reason</label>
                 <select 
                   required
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  className="form-input"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none focus:border-emerald-500"
                 >
-                  <option value="">Choose standard administrative audit reason...</option>
-                  <option value="Uploaded medical board license certificate is expired. Please upload active renewal files.">Expired medical certificate upload</option>
-                  <option value="Registered NPI number record does not match clinical board registry databases. Check NPI entries.">NPI credentials check fail</option>
-                  <option value="The clinical office location ZIP code mismatches registered state licensing limits.">Geographic zoning discrepancy</option>
+                  <option value="">Select audit flag reason...</option>
+                  <option value="Uploaded medical board license certificate is expired. Please upload active renewal files.">Expired medical certificate file</option>
+                  <option value="Registered NPI number record does not match clinical board registry databases. Check NPI entries.">NPI credentials mismatch</option>
+                  <option value="The clinical office location ZIP code mismatches registered state licensing limits.">Zoning licensing mismatch</option>
                   <option value="Low resolution avatar headshot. Upload a professional clinic profile photo.">Avatar photo unapproved</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "8px" }}>Custom Rejection Details</label>
+                <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Custom details</label>
                 <textarea 
                   value={rejectionReason}
-                  onChange={(e) => setReviewerComment(e.target.value)} // Bind update
-                  className="form-input" 
-                  rows={3}
-                  placeholder="Detail custom credentials issues..."
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none focus:border-emerald-500" 
+                  rows={2}
+                  style={{ resize: "none" }}
+                  placeholder="Detail license check issues..."
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              <div className="flex gap-3 mt-2">
                 <button 
                   type="button" 
                   onClick={() => setSelectedDocForRejection(null)}
-                  className="btn btn-secondary" 
-                  style={{ flexGrow: 1 }}
+                  className="flex-1 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 py-3 rounded-lg cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={rejecting || !rejectionReason}
-                  className="btn btn-primary" 
-                  style={{ background: "var(--danger)", color: "white", flexGrow: 1 }}
+                  className="flex-1 text-xs font-bold text-white bg-red-600 hover:bg-red-700 py-3 rounded-lg cursor-pointer shadow-md"
                 >
                   {rejecting ? "Rejecting..." : "Confirm Rejection"}
                 </button>
@@ -532,9 +428,4 @@ export default function AdminConsole() {
       )}
     </div>
   );
-
-  // Bind comment input update in modal
-  function setReviewerComment(val: string) {
-    setRejectionReason(val);
-  }
 }

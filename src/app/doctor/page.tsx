@@ -57,7 +57,12 @@ export default function DoctorPortal() {
   const [doc, setDoc] = useState<DoctorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("standing"); // "standing" | "calendar" | "settings" | "bookings" | "reviews"
-  
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Settings Form values
   const [clinicName, setClinicName] = useState("");
   const [address, setAddress] = useState("");
@@ -75,7 +80,6 @@ export default function DoctorPortal() {
   const [newSlotDateTime, setNewSlotDateTime] = useState("");
   const [slotStatus, setSlotStatus] = useState<"IDLE" | "PENDING" | "SUCCESS" | "ERROR">("IDLE");
 
-  // Load and verify doctor session
   useEffect(() => {
     const raw = localStorage.getItem("doctor_session");
     if (!raw) {
@@ -100,7 +104,6 @@ export default function DoctorPortal() {
       const data = await res.json();
       if (data.success) {
         setDoc(data.data);
-        // Prep form settings
         setClinicName(data.data.clinicName);
         setAddress(data.data.address);
         setCity(data.data.city);
@@ -119,13 +122,11 @@ export default function DoctorPortal() {
     }
   };
 
-  // Sign out
   const handleLogout = () => {
     localStorage.removeItem("doctor_session");
     router.push("/doctor/login");
   };
 
-  // Add a new availability opening
   const handleAddSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSlotDateTime || !doc) return;
@@ -143,7 +144,6 @@ export default function DoctorPortal() {
       const data = await res.json();
       if (data.success) {
         setSlotStatus("SUCCESS");
-        // Append slot locally
         setDoc(prev => {
           if (!prev) return prev;
           const updatedSlots = [...prev.availability, data.slot].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
@@ -152,9 +152,8 @@ export default function DoctorPortal() {
             availability: updatedSlots
           };
         });
-        // Refetch to update calculated searchScore
         fetchDoctorProfile(doc.id);
-        setTimeout(() => setSlotStatus("IDLE"), 2500);
+        setTimeout(() => setSlotStatus("IDLE"), 2000);
         setNewSlotDateTime("");
       } else {
         setSlotStatus("ERROR");
@@ -164,7 +163,6 @@ export default function DoctorPortal() {
     }
   };
 
-  // Delete an open slot
   const handleDeleteSlot = async (slotId: string) => {
     if (!doc) return;
     if (!confirm("Are you sure you want to delete this open time slot?")) return;
@@ -182,7 +180,6 @@ export default function DoctorPortal() {
             availability: prev.availability.filter(s => s.id !== slotId)
           };
         });
-        // Refetch searchScore
         fetchDoctorProfile(doc.id);
       } else {
         alert(data.error);
@@ -192,7 +189,6 @@ export default function DoctorPortal() {
     }
   };
 
-  // Save Settings forms
   const handleSettingsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!doc) return;
@@ -212,7 +208,7 @@ export default function DoctorPortal() {
       if (data.success) {
         setSettingsStatus("SUCCESS");
         setDoc(data.data);
-        setTimeout(() => setSettingsStatus("IDLE"), 3000);
+        setTimeout(() => setSettingsStatus("IDLE"), 2000);
       }
     } catch {
       setSettingsStatus("IDLE");
@@ -221,317 +217,171 @@ export default function DoctorPortal() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "120px", color: "var(--text-muted)" }}>
-        🌀 Loading clinical database logs...
+      <div className="text-center py-24 text-slate-500 font-medium">
+        🌀 Loading provider dashboard environment...
       </div>
     );
   }
 
   if (!doc) return null;
 
-  // Real-time Optimization Checklist Analysis
   const now = new Date();
   const nextWeek = new Date();
   nextWeek.setDate(now.getDate() + 7);
   const activeSlots = doc.availability.filter(s => !s.isBooked && new Date(s.startTime) >= now && new Date(s.startTime) <= nextWeek).length;
 
   return (
-    <div style={{ minHeight: "90vh", background: "var(--bg-main)", padding: "40px 20px" }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        
-        {/* Portal Header */}
-        <div className="glass-panel" style={{ padding: "24px 30px", background: "var(--bg-card)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px", marginBottom: "30px" }}>
+    <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+
+        {/* Workspace header */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 shadow-sm">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className="badge badge-verified" style={{ background: doc.verificationStatus === "APPROVED" ? "hsl(142,69%,92%)" : "hsl(38,92%,92%)", color: doc.verificationStatus === "APPROVED" ? "var(--success)" : "var(--accent)" }}>
-                ● Directory: {doc.verificationStatus}
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${doc.verificationStatus === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                Status: {doc.verificationStatus}
               </span>
-              <span className="badge badge-secondary">NPI: {doc.npiNumber}</span>
+              <span className="text-[10px] font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                NPI: {doc.npiNumber}
+              </span>
             </div>
-            <h1 style={{ fontSize: "2rem", marginTop: "6px" }}>Welcome back, {session?.name}</h1>
-            <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Clinical practice: <strong>{doc.clinicName}</strong></div>
+            <h1 className="font-display text-2xl font-extrabold text-slate-900">Welcome, {session?.name}</h1>
+            <p className="text-xs text-slate-500 mt-0.5">Clinical practice: <strong className="text-slate-800">{doc.clinicName}</strong></p>
           </div>
 
-          <div style={{ display: "flex", gap: "12px" }}>
-            <a href={`/doctor/${doc.id}`} target="_blank" className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: "0.85rem" }}>
-              🔗 View Public Listing
+          <div className="flex gap-2.5">
+            <a href={`/doctor/${doc.id}`} target="_blank" className="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all rounded-lg px-4 py-2 border border-slate-200">
+              Public Profile
             </a>
-            <button onClick={handleLogout} className="btn btn-secondary" style={{ border: "1px solid var(--danger)", color: "var(--danger)", padding: "8px 16px", fontSize: "0.85rem" }}>
+            <button onClick={handleLogout} className="text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 rounded-lg px-4 py-2 cursor-pointer">
               Sign Out
             </button>
           </div>
         </div>
 
-        {/* Tab Navigation Menu */}
-        <div style={{ display: "flex", borderBottom: "1px solid var(--border-color)", gap: "20px", marginBottom: "30px", overflowX: "auto" }}>
-          <button 
-            onClick={() => setActiveTab("standing")}
-            style={{
-              padding: "12px 6px",
-              background: "transparent",
-              border: "none",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              color: activeTab === "standing" ? "var(--primary)" : "var(--text-muted)",
-              borderBottom: activeTab === "standing" ? "3px solid var(--primary)" : "3px solid transparent",
-              cursor: "pointer",
-              transition: "var(--transition)",
-              whiteSpace: "nowrap"
-            }}
-          >
-            ⭐ Search Optimization Standing
-          </button>
-          <button 
-            onClick={() => setActiveTab("calendar")}
-            style={{
-              padding: "12px 6px",
-              background: "transparent",
-              border: "none",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              color: activeTab === "calendar" ? "var(--primary)" : "var(--text-muted)",
-              borderBottom: activeTab === "calendar" ? "3px solid var(--primary)" : "3px solid transparent",
-              cursor: "pointer",
-              transition: "var(--transition)",
-              whiteSpace: "nowrap"
-            }}
-          >
-            📅 Calendar Availability Slots
-          </button>
-          <button 
-            onClick={() => setActiveTab("settings")}
-            style={{
-              padding: "12px 6px",
-              background: "transparent",
-              border: "none",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              color: activeTab === "settings" ? "var(--primary)" : "var(--text-muted)",
-              borderBottom: activeTab === "settings" ? "3px solid var(--primary)" : "3px solid transparent",
-              cursor: "pointer",
-              transition: "var(--transition)",
-              whiteSpace: "nowrap"
-            }}
-          >
-            ⚙️ Edit Listing Details
-          </button>
-          <button 
-            onClick={() => setActiveTab("bookings")}
-            style={{
-              padding: "12px 6px",
-              background: "transparent",
-              border: "none",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              color: activeTab === "bookings" ? "var(--primary)" : "var(--text-muted)",
-              borderBottom: activeTab === "bookings" ? "3px solid var(--primary)" : "3px solid transparent",
-              cursor: "pointer",
-              transition: "var(--transition)",
-              whiteSpace: "nowrap"
-            }}
-          >
-            📝 Bookings Log ({doc.bookings ? doc.bookings.length : 0})
-          </button>
-          <button 
-            onClick={() => setActiveTab("reviews")}
-            style={{
-              padding: "12px 6px",
-              background: "transparent",
-              border: "none",
-              fontFamily: "var(--font-sans)",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              color: activeTab === "reviews" ? "var(--primary)" : "var(--text-muted)",
-              borderBottom: activeTab === "reviews" ? "3px solid var(--primary)" : "3px solid transparent",
-              cursor: "pointer",
-              transition: "var(--transition)",
-              whiteSpace: "nowrap"
-            }}
-          >
-            👍 Patient Feedbacks ({doc.reviews.length})
-          </button>
+        {/* Tab Buttons */}
+        <div className="flex border-b border-slate-200 gap-6 mb-8 overflow-x-auto">
+          {[
+            { id: "standing", label: "⭐ standing optimization" },
+            { id: "calendar", label: "📅 scheduling slots" },
+            { id: "settings", label: "⚙️ profile details" },
+            { id: "bookings", label: `📝 patient bookings (${doc.bookings ? doc.bookings.length : 0})` },
+            { id: "reviews", label: `👍 feedbacks (${doc.reviews.length})` }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`pb-3 font-semibold text-xs capitalize whitespace-nowrap cursor-pointer border-b-2 transition-all ${activeTab === tab.id ? 'text-emerald-600 border-emerald-500' : 'text-slate-400 border-transparent hover:text-slate-700'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Tab Content Panels */}
-        <div className="animated-fade">
-          
-          {/* Standing Dashboard */}
+        {/* Tab Contents */}
+        <div className="animate-fade">
+
+          {/* Standing tab */}
           {activeTab === "standing" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 2fr", gap: "30px" }}>
-              {/* Radial Indicator Score */}
-              <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-                <h3 style={{ fontSize: "1.1rem", textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--text-muted)", marginBottom: "20px" }}>Optimization Index</h3>
-                
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Radial index card */}
+              <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 text-center flex flex-col items-center justify-center shadow-sm">
+                <h3 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400 mb-6">Search prominence score</h3>
                 <div style={{
                   position: "relative",
-                  width: "160px",
-                  height: "160px",
+                  width: "140px",
+                  height: "140px",
                   borderRadius: "50%",
-                  background: `conic-gradient(var(--primary) ${doc.searchScore * 3.6}deg, var(--border-color) 0deg)`,
+                  background: `conic-gradient(#10b981 ${doc.searchScore * 3.6}deg, #f1f5f9 0deg)`,
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "20px"
-                }}>
-                  <div style={{
-                    width: "135px",
-                    height: "135px",
-                    borderRadius: "50%",
-                    background: "var(--bg-card)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center"
-                  }}>
-                    <span style={{ fontSize: "2.4rem", fontWeight: 800, color: "var(--primary)", fontFamily: "var(--font-display)" }}>{doc.searchScore}</span>
-                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>Score / 100</span>
+                  justifyContent: "center"
+                }} className="mb-6 shadow-inner">
+                  <div className="w-28 h-28 rounded-full bg-white flex flex-col items-center justify-center shadow-md">
+                    <span className="font-display text-3xl font-extrabold text-emerald-600">{doc.searchScore}</span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">score / 100</span>
                   </div>
                 </div>
-
-                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: "1.5" }}>
-                  A higher Search Standing score increases your prominence, displays your card above others in search results, and raises booking frequencies.
-                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Higher scores increase listing ranking in patient geolocation query grids, boosting booking conversions.
+                </p>
               </div>
 
-              {/* Suggestions checklists */}
-              <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-                <h3 style={{ fontSize: "1.3rem", marginBottom: "15px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>Standing Audit Checklist</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  
-                  {/* Suggestion 1: Video */}
-                  <div style={{ display: "flex", gap: "15px", alignItems: "flex-start", background: doc.introVideoUrl ? "hsl(142,69%,96%)" : "var(--bg-main)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
-                    <span style={{ fontSize: "1.5rem" }}>{doc.introVideoUrl ? "✅" : "➕"}</span>
-                    <div>
-                      <strong style={{ fontSize: "0.95rem" }}>Clinic Introductory Video (+5 pts)</strong>
-                      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                        {doc.introVideoUrl ? "Verified! Video consulting link is loaded." : "Add a consult/welcome video URL in settings to introduce your practice values."}
-                      </p>
-                    </div>
-                  </div>
+              {/* suggestions card */}
+              <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Optimization Audit checklist</h3>
 
-                  {/* Suggestion 2: Bio length */}
-                  <div style={{ display: "flex", gap: "15px", alignItems: "flex-start", background: (doc.bioFull && doc.bioFull.length > 200) ? "hsl(142,69%,96%)" : "var(--bg-main)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
-                    <span style={{ fontSize: "1.5rem" }}>{(doc.bioFull && doc.bioFull.length > 200) ? "✅" : "➕"}</span>
-                    <div>
-                      <strong style={{ fontSize: "0.95rem" }}>Meticulous Clinical Statement (+5 pts)</strong>
-                      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                        {(doc.bioFull && doc.bioFull.length > 200) ? `Verified! Narrative contains ${doc.bioFull.length} characters.` : "Write a detailed clinical profile (over 200 characters) sharing your narrative."}
-                      </p>
+                <div className="flex flex-col gap-4">
+                  {[
+                    { title: "Introductory Video consult (+5 pts)", desc: "Add a consulte video URL in details to introduce yourself.", met: !!doc.introVideoUrl },
+                    { title: "Clinical Narrative details (+5 pts)", desc: "Write a detailed bio narrative statement exceeding 200 characters.", met: !!(doc.bioFull && doc.bioFull.length > 200) },
+                    { title: "Near-Term Calendar openings (+20 pts)", desc: "Add at least 6 open slots in the next 7 days.", met: activeSlots >= 6 },
+                    { title: "Sliding Scale Financing options (+5 pts)", desc: "Enable sliding scale fee adjustments in your profile.", met: doc.slidingScale }
+                  ].map((item, idx) => (
+                    <div key={idx} className={`p-4 rounded-xl border flex gap-4 items-start ${item.met ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50/50 border-slate-200'}`}>
+                      <span className="text-sm mt-0.5">{item.met ? "✅" : "➕"}</span>
+                      <div>
+                        <strong className={`text-xs block ${item.met ? 'text-emerald-800' : 'text-slate-800'}`}>{item.title}</strong>
+                        <p className="text-[10px] text-slate-500 mt-1">{item.desc}</p>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Suggestion 3: Near term availability */}
-                  <div style={{ display: "flex", gap: "15px", alignItems: "flex-start", background: activeSlots >= 6 ? "hsl(142,69%,96%)" : "var(--bg-main)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
-                    <span style={{ fontSize: "1.5rem" }}>{activeSlots >= 6 ? "✅" : "➕"}</span>
-                    <div>
-                      <strong style={{ fontSize: "0.95rem" }}>Near-Term Scheduling Slots (+20 pts)</strong>
-                      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                        {activeSlots >= 6 ? `Verified! You have ${activeSlots} slots in the next 7 days.` : `Boost slots! You have ${activeSlots} active slots. Add ${6 - activeSlots} more openings in the next 7 days.`}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Suggestion 4: Sliding scale */}
-                  <div style={{ display: "flex", gap: "15px", alignItems: "flex-start", background: doc.slidingScale ? "hsl(142,69%,96%)" : "var(--bg-main)", padding: "16px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
-                    <span style={{ fontSize: "1.5rem" }}>{doc.slidingScale ? "✅" : "➕"}</span>
-                    <div>
-                      <strong style={{ fontSize: "0.95rem" }}>Sliding Scale Financing (+5 pts)</strong>
-                      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                        {doc.slidingScale ? "Verified! Configured sliding scale options." : "Enable sliding scale in settings to grab patient budget queries."}
-                      </p>
-                    </div>
-                  </div>
-
+                  ))}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Calendar Slots panel */}
+          {/* Calendar tab */}
           {activeTab === "calendar" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 2fr", gap: "30px" }}>
-              
-              {/* Add slot form */}
-              <div className="glass-panel" style={{ padding: "24px", background: "var(--bg-card)", height: "fit-content" }}>
-                <h3 style={{ fontSize: "1.15rem", marginBottom: "15px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>Create Availability Slot</h3>
-                
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Creator card */}
+              <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
+                <h3 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400 mb-4">Open Time Slot</h3>
                 {slotStatus === "SUCCESS" && (
-                  <div style={{ background: "var(--primary-light)", color: "var(--primary)", padding: "10px", borderRadius: "4px", fontSize: "0.85rem", marginBottom: "15px", textAlign: "center" }}>
-                    🎉 Time Slot Generated!
+                  <div className="bg-emerald-50 text-emerald-700 text-xs font-semibold p-2.5 rounded-lg text-center mb-4">
+                    ✓ Slot Added Successfully
                   </div>
                 )}
-
-                <form onSubmit={handleAddSlot} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <form onSubmit={handleAddSlot} className="flex flex-col gap-4">
                   <div>
-                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, marginBottom: "6px" }}>Select Date & Time</label>
-                    <input 
-                      type="datetime-local" 
-                      required 
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Pick Date & Time</label>
+                    <input
+                      type="datetime-local"
+                      required
                       value={newSlotDateTime}
                       onChange={(e) => setNewSlotDateTime(e.target.value)}
-                      className="form-input" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none focus:border-emerald-500"
                     />
                   </div>
-                  <button type="submit" disabled={slotStatus === "PENDING"} className="btn btn-primary" style={{ width: "100%" }}>
-                    {slotStatus === "PENDING" ? "Generating..." : "Open Time Slot"}
+                  <button type="submit" disabled={slotStatus === "PENDING"} className="w-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg cursor-pointer">
+                    {slotStatus === "PENDING" ? "Adding slot..." : "Open Time Slot"}
                   </button>
                 </form>
               </div>
 
-              {/* Slot listings list */}
-              <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-                <h3 style={{ fontSize: "1.3rem", marginBottom: "20px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>Current Openings Schedule</h3>
-                
+              {/* slots list card */}
+              <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Active Schedule Slots</h3>
+
                 {doc.availability.length === 0 ? (
-                  <p style={{ color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "40px" }}>
-                    No time slots configured. Add openings to increase search scores and receive bookings!
-                  </p>
+                  <p className="text-slate-400 text-xs italic text-center py-12">No scheduler openings yet. Add slot times to receive patient bookings.</p>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "12px" }}>
-                    {doc.availability.map((slot) => {
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {doc.availability.map(slot => {
                       const date = new Date(slot.startTime);
                       return (
-                        <div 
-                          key={slot.id} 
-                          style={{
-                            background: slot.isBooked ? "hsl(210,30%,95%)" : "hsl(142,69%,96%)",
-                            border: slot.isBooked ? "1px solid var(--border-color)" : "1px solid var(--primary-glow)",
-                            padding: "14px",
-                            borderRadius: "var(--radius-sm)",
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                            gap: "10px"
-                          }}
-                        >
+                        <div key={slot.id} className={`p-4 rounded-xl border flex flex-col justify-between gap-3 ${slot.isBooked ? 'bg-slate-50 border-slate-200' : 'bg-emerald-50/30 border-emerald-100'}`}>
                           <div>
-                            <div style={{ fontSize: "0.95rem", fontWeight: 700 }}>
-                              📅 {date.toLocaleDateString()}
-                            </div>
-                            <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                              ⏰ {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </div>
+                            <div className="text-xs font-bold text-slate-800">📅 {mounted ? date.toLocaleDateString() : date.toISOString().split('T')[0]}</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">⏰ {mounted ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}</div>
                           </div>
-                          
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span className="badge" style={{ 
-                              background: slot.isBooked ? "var(--border-color)" : "var(--primary)",
-                              color: slot.isBooked ? "var(--text-muted)" : "white",
-                              fontSize: "0.6rem"
-                            }}>
-                              {slot.isBooked ? "BOOKED" : "OPEN AVAILABLE"}
+                          <div className="flex justify-between items-center">
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${slot.isBooked ? 'bg-slate-200 text-slate-500' : 'bg-emerald-500 text-white'}`}>
+                              {slot.isBooked ? "BOOKED" : "AVAILABLE"}
                             </span>
-                            
                             {!slot.isBooked && (
-                              <button 
-                                onClick={() => handleDeleteSlot(slot.id)}
-                                style={{ background: "transparent", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: "0.85rem", fontWeight: 700 }}
-                              >
-                                Delete
+                              <button onClick={() => handleDeleteSlot(slot.id)} className="text-[10px] font-bold text-red-500 hover:underline cursor-pointer">
+                                Delete Slot
                               </button>
                             )}
                           </div>
@@ -541,130 +391,120 @@ export default function DoctorPortal() {
                   </div>
                 )}
               </div>
-
             </div>
           )}
 
-          {/* Settings forms panel */}
+          {/* Settings tab */}
           {activeTab === "settings" && (
-            <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-              <h3 style={{ fontSize: "1.3rem", marginBottom: "20px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>Practice Details Settings</h3>
-
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+              <h3 className="font-display font-bold text-sm text-slate-900 mb-6 border-b border-slate-100 pb-2">Clinical Settings</h3>
               {settingsStatus === "SUCCESS" && (
-                <div style={{ background: "var(--primary-light)", color: "var(--primary)", padding: "12px", borderRadius: "4px", fontSize: "0.9rem", marginBottom: "20px", textAlign: "center" }}>
-                  ✨ Clinical profile and search standing recalculated successfully!
+                <div className="bg-emerald-50 text-emerald-700 text-xs font-semibold p-3 rounded-lg text-center mb-6">
+                  ✓ Profile Details Updated and Search Score Standing Recalculated!
                 </div>
               )}
-
-              <form onSubmit={handleSettingsSubmit} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+              <form onSubmit={handleSettingsSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Clinic Office Name</label>
-                  <input type="text" value={clinicName} onChange={(e) => setClinicName(e.target.value)} className="form-input" />
+                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Clinic Name</label>
+                  <input type="text" value={clinicName} onChange={(e) => setClinicName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
                 </div>
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Office Address</label>
-                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="form-input" />
+                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Office Address</label>
+                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: "10px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>City</label>
-                    <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="form-input" />
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">City</label>
+                    <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>State</label>
-                    <input type="text" maxLength={2} value={state} onChange={(e) => setState(e.target.value)} className="form-input" />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>ZIP</label>
-                    <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="form-input" />
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">ZIP</label>
+                    <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Introductory Video consult URL</label>
-                  <input type="text" value={introVideoUrl} onChange={(e) => setIntroVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." className="form-input" />
+                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Intro Consult Video URL</label>
+                  <input type="text" value={introVideoUrl} onChange={(e) => setIntroVideoUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Primary Consultation Format</label>
-                  <select value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className="form-input">
-                    <option value="TELEHEALTH">Telehealth / Online Only</option>
-                    <option value="IN_PERSON">In-Office Clinic Only</option>
+                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Format</label>
+                  <select value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none cursor-pointer">
+                    <option value="TELEHEALTH">Telehealth Only</option>
+                    <option value="IN_PERSON">In-Person Clinic</option>
                     <option value="HYBRID">Hybrid Office & Remote</option>
                   </select>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", alignItems: "center" }}>
+                <div className="grid grid-cols-2 gap-3 items-center">
                   <div>
-                    <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Session Fee ($)</label>
-                    <input type="number" value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} className="form-input" />
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Fee ($)</label>
+                    <input type="number" value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
                   </div>
-                  <div style={{ marginTop: "24px" }}>
-                    <label className="filter-option" style={{ margin: 0 }}>
-                      <input type="checkbox" checked={slidingScale} onChange={(e) => setSlidingScale(e.target.checked)} className="filter-checkbox" />
-                      <strong>Offer Sliding Scale Fees</strong>
+                  <div className="mt-6">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                      <input type="checkbox" checked={slidingScale} onChange={(e) => setSlidingScale(e.target.checked)} className="w-4 h-4 rounded border-slate-200 accent-emerald-500 cursor-pointer" />
+                      <span>Sliding Scale Fee</span>
                     </label>
                   </div>
                 </div>
 
-                <div style={{ gridColumn: "span 2" }}>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Full Bio Statement Statement</label>
-                  <textarea rows={5} value={bioFull} onChange={(e) => setBioFull(e.target.value)} className="form-input" style={{ resize: "none" }} />
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Full Clinical bio Narrative</label>
+                  <textarea rows={4} value={bioFull} onChange={(e) => setBioFull(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" style={{ resize: "none" }} />
                 </div>
 
-                <div style={{ gridColumn: "span 2", display: "flex", justifyContent: "flex-end" }}>
-                  <button type="submit" disabled={settingsStatus === "PENDING"} className="btn btn-primary" style={{ padding: "10px 24px" }}>
-                    {settingsStatus === "PENDING" ? "Saving updates..." : "Save Profile Details"}
+                <div className="sm:col-span-2 flex justify-end">
+                  <button type="submit" disabled={settingsStatus === "PENDING"} className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-6 py-2.5 rounded-lg cursor-pointer">
+                    {settingsStatus === "PENDING" ? "Saving..." : "Save Settings"}
                   </button>
                 </div>
               </form>
             </div>
           )}
 
-          {/* Bookings log panel */}
+          {/* Bookings tab */}
           {activeTab === "bookings" && (
-            <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-              <h3 style={{ fontSize: "1.3rem", marginBottom: "20px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>Patient Appointments Log</h3>
-              
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Upcoming Appointments</h3>
+
               {!doc.bookings || doc.bookings.length === 0 ? (
-                <p style={{ color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "40px" }}>
-                  No patients have booked appointments yet. Once they book a slot from your public profile, they appear here.
-                </p>
+                <p className="text-slate-400 text-xs italic text-center py-12">No patient bookings logged yet.</p>
               ) : (
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.9rem" }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr style={{ borderBottom: "2px solid var(--border-color)", color: "var(--text-muted)" }}>
-                        <th style={{ padding: "12px" }}>Patient Name</th>
-                        <th style={{ padding: "12px" }}>Selected Date & Hour</th>
-                        <th style={{ padding: "12px" }}>Email</th>
-                        <th style={{ padding: "12px" }}>Phone</th>
-                        <th style={{ padding: "12px" }}>Insurance Provider</th>
-                        <th style={{ padding: "12px" }}>Verification Status</th>
+                      <tr className="border-b border-slate-200 text-slate-400">
+                        <th className="pb-3 pt-1 pl-2">Patient</th>
+                        <th className="pb-3 pt-1">Session Date & Hour</th>
+                        <th className="pb-3 pt-1">Email</th>
+                        <th className="pb-3 pt-1">Phone</th>
+                        <th className="pb-3 pt-1">Insurance Plan</th>
+                        <th className="pb-3 pt-1 pr-2 text-right">Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {doc.bookings.map((book) => {
+                      {doc.bookings.map(book => {
                         const date = new Date(book.slot.startTime);
                         return (
-                          <tr key={book.id} style={{ borderBottom: "1px solid var(--border-color)" }}>
-                            <td style={{ padding: "12px", fontWeight: 700 }}>{book.patientName}</td>
-                            <td style={{ padding: "12px" }}>
-                              <strong>{date.toLocaleDateString()}</strong> at {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <tr key={book.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50">
+                            <td className="py-4 pl-2 font-bold text-slate-900">{book.patientName}</td>
+                            <td className="py-4">
+                              <strong>{mounted ? date.toLocaleDateString() : date.toISOString().split('T')[0]}</strong>
+                              {mounted ? ` at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ""}
                             </td>
-                            <td style={{ padding: "12px" }}>{book.patientEmail}</td>
-                            <td style={{ padding: "12px" }}>{book.patientPhone}</td>
-                            <td style={{ padding: "12px" }}>
+                            <td className="py-4 text-slate-500">{book.patientEmail}</td>
+                            <td className="py-4 text-slate-500">{book.patientPhone}</td>
+                            <td className="py-4">
                               {book.insurance ? (
-                                <span className="badge badge-secondary" style={{ fontSize: "0.65rem", textTransform: "none" }}>{book.insurance}</span>
+                                <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{book.insurance}</span>
                               ) : (
-                                <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>Private pay</span>
+                                <span className="text-slate-400 text-[10px]">Private pay</span>
                               )}
                             </td>
-                            <td style={{ padding: "12px" }}>
-                              <span className="badge badge-verified" style={{ background: "hsl(142,69%,92%)", color: "var(--success)" }}>
-                                CONFIRMED
-                              </span>
+                            <td className="py-4 pr-2 text-right">
+                              <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">CONFIRMED</span>
                             </td>
                           </tr>
                         );
@@ -676,27 +516,25 @@ export default function DoctorPortal() {
             </div>
           )}
 
-          {/* Patient reviews panel */}
+          {/* Reviews tab */}
           {activeTab === "reviews" && (
-            <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-              <h3 style={{ fontSize: "1.3rem", marginBottom: "20px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>Patient Reviews & Ratings</h3>
-              
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Patient Rating logs</h3>
+
               {doc.reviews.length === 0 ? (
-                <p style={{ color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "40px" }}>
-                  No reviews submitted yet. Patient reviews left on your public page will appear here.
-                </p>
+                <p className="text-slate-400 text-xs italic text-center py-12">No patient reviews submitted yet.</p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                  {doc.reviews.map((rev) => (
-                    <div key={rev.id} style={{ padding: "20px", background: "var(--bg-main)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-color)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <div className="flex flex-col gap-4">
+                  {doc.reviews.map(rev => (
+                    <div key={rev.id} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl">
+                      <div className="flex justify-between items-center mb-2">
                         <div>
-                          <strong style={{ fontSize: "0.95rem" }}>{rev.patientName}</strong>
-                          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginLeft: "10px" }}>Posted on {new Date(rev.createdAt).toLocaleDateString()}</span>
+                          <strong className="text-xs text-slate-800 font-bold">{rev.patientName}</strong>
+                          <span className="text-[10px] text-slate-400 ml-2">{mounted ? new Date(rev.createdAt).toLocaleDateString() : new Date(rev.createdAt).toISOString().split('T')[0]}</span>
                         </div>
-                        <span style={{ color: "var(--accent)" }}>{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</span>
+                        <span className="text-amber-400 text-xs">{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</span>
                       </div>
-                      <p style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>"{rev.comment}"</p>
+                      <p className="text-slate-600 text-xs">"{rev.comment}"</p>
                     </div>
                   ))}
                 </div>

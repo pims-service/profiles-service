@@ -22,23 +22,64 @@ export async function POST(request: Request) {
       );
     }
 
-    // Set fallback mock coordinates based on city or default (e.g. SF: 37.7749, NY: 40.7128)
+    // 1. Resolve geographic coordinates dynamically (Supports both US and PK cities)
     let latitude = 40.7128;
     let longitude = -74.0060;
-    if (city.toLowerCase() === "los angeles" || state.toLowerCase() === "ca") {
+    
+    const cityLower = city.toLowerCase().trim();
+    const stateLower = state.toLowerCase().trim();
+
+    // Pakistani Cities Coordinates Resolution
+    if (cityLower === "karachi") {
+      latitude = 24.8607;
+      longitude = 67.0011;
+    } else if (cityLower === "lahore") {
+      latitude = 31.5204;
+      longitude = 74.3587;
+    } else if (cityLower === "islamabad") {
+      latitude = 33.6844;
+      longitude = 73.0479;
+    } else if (cityLower === "rawalpindi") {
+      latitude = 33.5651;
+      longitude = 73.0169;
+    } else if (cityLower === "peshawar") {
+      latitude = 34.0151;
+      longitude = 71.5249;
+    } else if (cityLower === "quetta") {
+      latitude = 30.1798;
+      longitude = 66.9750;
+    } else if (cityLower === "faisalabad") {
+      latitude = 31.4504;
+      longitude = 73.1350;
+    } else if (cityLower === "multan") {
+      latitude = 30.1575;
+      longitude = 71.5249;
+    }
+    // US Cities Coordinate Fallbacks
+    else if (cityLower === "los angeles" || stateLower === "ca") {
       latitude = 34.0522;
       longitude = -118.2437;
-    } else if (city.toLowerCase() === "boston" || state.toLowerCase() === "ma") {
+    } else if (cityLower === "boston" || stateLower === "ma") {
       latitude = 42.3601;
       longitude = -71.0589;
-    } else if (city.toLowerCase() === "houston" || state.toLowerCase() === "tx") {
+    } else if (cityLower === "houston" || stateLower === "tx") {
       latitude = 29.7604;
       longitude = -95.3698;
+    } else if (cityLower === "chicago" || stateLower === "il") {
+      latitude = 41.8781;
+      longitude = -87.6298;
+    } else if (cityLower === "miami" || stateLower === "fl") {
+      latitude = 25.7645;
+      longitude = -80.1920;
+    } else if (cityLower === "seattle" || stateLower === "wa") {
+      latitude = 47.6138;
+      longitude = -122.3302;
     }
 
-    // Transaction to create User + Profile
+    // Hash Password
     const passwordHash = crypto.createHash("sha256").update(password).digest("hex");
 
+    // Database transactional creation
     const result = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -71,12 +112,12 @@ export async function POST(request: Request) {
           languages: JSON.stringify(languages || []),
           bioPreview: bioPreview || "",
           bioFull: bioFull || "",
-          headshotUrl: headshotUrl || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=250&auto=format&fit=crop",
+          headshotUrl: headshotUrl || "https://images.unsplash.com/photo-1594824813573-246434de83fb?q=80&w=250&auto=format&fit=crop",
           sessionFormat: sessionFormat || "TELEHEALTH",
-          sessionFee: parseFloat(sessionFee || "200"),
+          sessionFee: parseFloat(sessionFee || "2000"),
           slidingScale: !!slidingScale,
-          acceptedInsurances: JSON.stringify(["Aetna", "Cigna"]), // Default seed
-          searchScore: 50, // Base starting score
+          acceptedInsurances: JSON.stringify(["Cash Pay", "Private Insurance"]),
+          searchScore: 50,
         },
       });
 
@@ -90,7 +131,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("🚨 Doctor Register API Error:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to create psychiatrist registration record." },
+      { success: false, error: "Failed to create psychiatrist registration." },
       { status: 500 }
     );
   }

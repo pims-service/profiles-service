@@ -25,6 +25,13 @@ const geoRegistry: Record<string, GeoLocation> = {
   "78701": { name: "Austin, TX", lat: 30.2691, lng: -97.7402, city: "Austin", state: "TX" },
   "94111": { name: "San Francisco, CA", lat: 37.7925, lng: -122.4002, city: "San Francisco", state: "CA" },
   "32801": { name: "Orlando, FL", lat: 28.5383, lng: -81.3792, city: "Orlando", state: "FL" },
+  // Pakistani Cities
+  "74200": { name: "Karachi, PK", lat: 24.8607, lng: 67.0011, city: "Karachi", state: "Sindh" },
+  "54000": { name: "Lahore, PK", lat: 31.5204, lng: 74.3587, city: "Lahore", state: "Punjab" },
+  "44000": { name: "Islamabad, PK", lat: 33.6844, lng: 73.0479, city: "Islamabad", state: "ICT" },
+  "46000": { name: "Rawalpindi, PK", lat: 33.5651, lng: 73.0169, city: "Rawalpindi", state: "Punjab" },
+  "25000": { name: "Peshawar, PK", lat: 34.0151, lng: 71.5249, city: "Peshawar", state: "KPK" },
+  "87300": { name: "Quetta, PK", lat: 30.1798, lng: 66.9750, city: "Quetta", state: "Balochistan" },
 };
 
 // Map of lowercased city names to coordinates

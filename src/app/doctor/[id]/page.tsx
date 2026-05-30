@@ -71,6 +71,11 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
   const [reviewComment, setReviewerComment] = useState("");
   const [reviewStatus, setReviewStatus] = useState<"IDLE" | "PENDING" | "SUCCESS" | "ERROR">("IDLE");
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const fetchDoctor = async () => {
     setLoading(true);
     try {
@@ -113,7 +118,6 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
       const data = await res.json();
       if (data.success) {
         setBookingStatus("SUCCESS");
-        // Update slot locally
         setDoc(prev => {
           if (!prev) return prev;
           return {
@@ -127,7 +131,7 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
           setBookingEmail("");
           setBookingPhone("");
           setSelectedSlotId("");
-        }, 3000);
+        }, 2000);
       } else {
         setBookingStatus("ERROR");
       }
@@ -155,7 +159,6 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
       const data = await res.json();
       if (data.success) {
         setReviewStatus("SUCCESS");
-        // Append newly created review locally
         setDoc(prev => {
           if (!prev) return prev;
           return {
@@ -168,7 +171,7 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
           setReviewerName("");
           setReviewerRating(5);
           setReviewerComment("");
-        }, 3000);
+        }, 2000);
       } else {
         setReviewStatus("ERROR");
       }
@@ -179,23 +182,25 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "120px", color: "var(--text-muted)" }}>
-        🌀 Loading profile statistics...
+      <div className="text-center py-24 text-slate-500 font-medium">
+        🌀 Fetching profile specifications...
       </div>
     );
   }
 
   if (error || !doc) {
     return (
-      <div style={{ textAlign: "center", padding: "100px 20px" }}>
-        <h3>Profile Not Found</h3>
-        <p style={{ color: "var(--text-muted)", margin: "10px 0 20px" }}>This doctor is suspended or undergoing credential review.</p>
-        <Link href="/" className="btn btn-primary">Back to Directory</Link>
+      <div className="text-center py-20 px-4 max-w-sm mx-auto">
+        <h3 className="text-lg font-bold text-slate-900 mb-2">Practitioner Not Listed</h3>
+        <p className="text-slate-500 text-xs mb-6">This listing may be suspended or undergoing administrative license verification.</p>
+        <Link href="/" className="inline-flex text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all rounded-lg px-4 py-2">
+          Return to Directory
+        </Link>
       </div>
     );
   }
 
-  // Parse lists
+  // Parse arrays
   let specialties: string[] = [];
   let modalities: string[] = [];
   let demographics: string[] = [];
@@ -212,8 +217,8 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
     : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-main)", paddingBottom: "80px" }}>
-      {/* Dynamic JSON-LD SEO Structured Data for Google/Search Crawlers */}
+    <div className="bg-slate-50 min-h-screen pb-20">
+      {/* Dynamic Schema.org Physician SEO structured metadata */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -232,7 +237,7 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
               "postalCode": doc.zipCode,
               "addressCountry": "US"
             },
-            "priceRange": `$$ (Session Fee: $${doc.sessionFee})`,
+            "priceRange": `$$ (Session Cost: $${doc.sessionFee})`,
             "aggregateRating": doc.reviews.length > 0 ? {
               "@type": "AggregateRating",
               "ratingValue": avgRating.toFixed(1),
@@ -243,164 +248,120 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
       />
 
       {/* Doctor Header Banner */}
-      <section style={{
-        background: "linear-gradient(135deg, hsl(215, 28%, 10%), hsl(var(--primary-hue), 40%, 18%))",
-        color: "white",
-        padding: "50px 20px"
-      }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", gap: "30px", alignItems: "center", flexWrap: "wrap" }}>
-          {/* Avatar */}
-          <div style={{
-            width: "160px",
-            height: "160px",
-            borderRadius: "var(--radius-md)",
-            overflow: "hidden",
-            border: "4px solid rgba(255,255,255,0.15)",
-            boxShadow: "var(--shadow-lg)",
-            flexShrink: 0
-          }}>
-            <img src={doc.headshotUrl} alt={doc.user.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <section className="bg-gradient-to-r from-slate-900 to-slate-800 text-white py-12 px-6 shadow-sm">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-8">
+          <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white/10 shadow-lg flex-shrink-0 bg-slate-800">
+            <img src={doc.headshotUrl} alt={doc.user.name} className="w-full h-full object-cover" />
           </div>
 
-          {/* Info */}
-          <div style={{ flexGrow: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "8px" }}>
-              <span className="badge badge-primary" style={{ background: "var(--primary)", color: "white" }}>
-                ✓ Verified Practitioner
+          <div className="flex-grow text-center md:text-left">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
+              <span className="text-[10px] font-bold bg-emerald-500 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                Verified Provider
               </span>
-              <span className="badge badge-secondary" style={{ background: "rgba(255,255,255,0.1)", color: "white" }}>
+              <span className="text-[10px] font-semibold bg-white/10 text-slate-200 px-2.5 py-0.5 rounded-full">
                 NPI: {doc.npiNumber}
               </span>
             </div>
 
-            <h1 style={{ fontSize: "2.6rem", color: "white", marginBottom: "4px" }}>{doc.user.name}, {doc.licenseType}</h1>
-            <p style={{ color: "var(--primary-light)", fontSize: "1.1rem", fontWeight: 600, marginBottom: "8px" }}>
-              {doc.clinicName}
-            </p>
+            <h1 className="font-display text-3xl font-extrabold tracking-tight mb-1">{doc.user.name}, {doc.licenseType}</h1>
+            <p className="text-emerald-400 font-semibold text-sm mb-4">{doc.clinicName}</p>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap", fontSize: "0.95rem", color: "hsl(210, 10%, 80%)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--accent)" }}>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-xs text-slate-300">
+              <div className="flex items-center gap-1 text-amber-400 font-semibold">
                 <span>{"★".repeat(Math.round(avgRating))}</span>
-                <span style={{ color: "rgba(255,255,255,0.3)" }}>{"★".repeat(5 - Math.round(avgRating))}</span>
-                <strong style={{ color: "white", marginLeft: "4px" }}>{avgRating ? avgRating.toFixed(1) : "NEW"}</strong>
-                <span style={{ color: "hsl(210, 10%, 80%)" }}>({doc.reviews.length} reviews)</span>
+                <span className="text-white/20">{"★".repeat(5 - Math.round(avgRating))}</span>
+                <strong className="text-white ml-1">{avgRating ? avgRating.toFixed(1) : "NEW"}</strong>
+                <span className="text-slate-400">({doc.reviews.length} reviews)</span>
               </div>
               <div>📍 {doc.address}, {doc.city}, {doc.state} {doc.zipCode}</div>
             </div>
           </div>
-
-          {/* Score Circle */}
-          <div className="glass-panel" style={{
-            padding: "16px 24px",
-            textAlign: "center",
-            background: "rgba(255,255,255,0.06)",
-            borderColor: "rgba(255,255,255,0.12)",
-            flexShrink: 0
-          }}>
-            <div style={{ fontSize: "0.7rem", color: "hsl(210, 10%, 75%)", textTransform: "uppercase", fontWeight: 800 }}>Search Standing</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--primary)" }}>{doc.searchScore}<span style={{ fontSize: "1rem", color: "hsl(210, 10%, 70%)" }}>/100</span></div>
-            <div style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>Completeness & sentiment</div>
-          </div>
         </div>
       </section>
 
-      {/* Main Layout Grid */}
-      <section className="profile-grid">
+      {/* Decluttered Profile Grid */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left Column - Detailed Bio and Reviews */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+        {/* Left Column: Decluttered Clinical Information */}
+        <div className="lg:col-span-8 flex flex-col gap-8">
           
-          {/* Elevator Pitch Box */}
-          <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-            <h3 style={{ fontSize: "1.3rem", marginBottom: "15px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>About</h3>
-            <p style={{ fontSize: "1.1rem", lineHeight: "1.7", color: "var(--text-main)", marginBottom: "20px", fontStyle: "italic", borderLeft: "3px solid var(--primary)", paddingLeft: "15px" }}>
+          {/* About Bio */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+            <h3 className="font-display font-bold text-base text-slate-900 mb-4 border-b border-slate-100 pb-2">About Clinical Practice</h3>
+            <p className="text-sm font-medium text-slate-800 border-l-2 border-emerald-500 pl-4 py-1 italic mb-4 leading-relaxed">
               "{doc.bioPreview}"
             </p>
-            <p style={{ fontSize: "0.98rem", color: "var(--text-muted)", whiteSpace: "pre-line" }}>
+            <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line">
               {doc.bioFull}
             </p>
           </div>
 
-          {/* Video Introduction Box (If present) */}
-          {doc.introVideoUrl && (
-            <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-              <h3 style={{ fontSize: "1.3rem", marginBottom: "15px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>Video Introduction</h3>
-              <div style={{ background: "hsl(215, 20%, 94%)", borderRadius: "var(--radius-sm)", height: "240px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "1.5px dashed var(--border-color)" }}>
-                <span style={{ fontSize: "2.5rem", cursor: "pointer" }}>▶️</span>
-                <div style={{ fontWeight: 700, margin: "10px 0 4px" }}>Introductory Video Consultation</div>
-                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>YouTube Link: <a href={doc.introVideoUrl} target="_blank" style={{ color: "var(--primary)", textDecoration: "underline" }}>{doc.introVideoUrl}</a></div>
-              </div>
-            </div>
-          )}
-
-          {/* Practice & Taxonomies */}
-          <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+          {/* Specialties and Modalities */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <h3 style={{ fontSize: "1.1rem", marginBottom: "12px", color: "var(--primary)", fontWeight: 700 }}>Clinical Specialties</h3>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-3">Clinical Specialties</h4>
+              <div className="flex flex-wrap gap-1.5">
                 {specialties.map((s, i) => (
-                  <span key={i} className="badge badge-secondary" style={{ fontSize: "0.75rem" }}>{s}</span>
+                  <span key={i} className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{s}</span>
                 ))}
               </div>
             </div>
-            
             <div>
-              <h3 style={{ fontSize: "1.1rem", marginBottom: "12px", color: "var(--primary)", fontWeight: 700 }}>Therapeutic Modalities</h3>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-3">Treatment Modalities</h4>
+              <div className="flex flex-wrap gap-1.5">
                 {modalities.map((m, i) => (
-                  <span key={i} className="badge badge-primary" style={{ fontSize: "0.75rem" }}>{m}</span>
+                  <span key={i} className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md">{m}</span>
                 ))}
               </div>
             </div>
-
             <div>
-              <h3 style={{ fontSize: "1.1rem", marginBottom: "12px", color: "var(--primary)", fontWeight: 700 }}>Languages Spoken</h3>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {languages.map((l, i) => (
-                  <span key={i} className="badge badge-secondary" style={{ fontSize: "0.75rem", background: "var(--border-color)", color: "var(--text-main)" }}>{l}</span>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 style={{ fontSize: "1.1rem", marginBottom: "12px", color: "var(--primary)", fontWeight: 700 }}>Target Demographics</h3>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+              <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-3">Target Demographics</h4>
+              <div className="flex flex-wrap gap-1.5">
                 {demographics.map((d, i) => (
-                  <span key={i} className="badge badge-secondary" style={{ fontSize: "0.75rem" }}>{d}</span>
+                  <span key={i} className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{d}</span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-3">Languages Spoken</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {languages.map((l, i) => (
+                  <span key={i} className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{l}</span>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Patient Reviews Section */}
-          <div className="glass-panel" style={{ padding: "30px", background: "var(--bg-card)" }}>
-            <h3 style={{ fontSize: "1.3rem", marginBottom: "20px", borderBottom: "1px solid var(--border-color)", paddingBottom: "10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>Patient Reviews</span>
-              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>{doc.reviews.length} Patient Feedbacks</span>
+          {/* Reviews Panel */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+            <h3 className="font-display font-bold text-base text-slate-900 mb-6 border-b border-slate-100 pb-2 flex justify-between items-center">
+              <span>Patient Feedback</span>
+              <span className="text-xs font-semibold text-slate-400">{doc.reviews.length} reviews</span>
             </h3>
 
-            {/* Submit a review */}
+            {/* Submit review */}
             {reviewStatus === "SUCCESS" ? (
-              <div className="glass-panel" style={{ padding: "16px", background: "var(--primary-light)", color: "var(--primary)", textAlign: "center", marginBottom: "20px" }}>
-                <strong>Thank you!</strong> Your patient review was published successfully.
+              <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-emerald-700 text-xs font-semibold text-center mb-6">
+                Thank you! Your patient session review was submitted successfully.
               </div>
             ) : (
-              <form onSubmit={handleReviewSubmit} style={{ background: "var(--bg-main)", padding: "20px", borderRadius: "var(--radius-sm)", marginBottom: "30px", display: "flex", flexDirection: "column", gap: "12px" }}>
-                <h4 style={{ fontSize: "1rem" }}>Write a Patient Review</h4>
+              <form onSubmit={handleReviewSubmit} className="bg-slate-50 border border-slate-200/60 p-4 rounded-xl mb-8 flex flex-col gap-3">
+                <h4 className="text-xs font-bold text-slate-900">Add a Public Review</h4>
                 
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "10px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input 
                     type="text" 
                     required 
                     placeholder="Your Name (e.g. Robert L.)" 
                     value={reviewerName}
                     onChange={(e) => setReviewerName(e.target.value)}
-                    className="form-input" 
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-xs text-slate-950 outline-none focus:border-emerald-500" 
                   />
                   <select 
                     value={reviewRating}
                     onChange={(e) => setReviewerRating(parseInt(e.target.value))}
-                    className="form-input"
+                    className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-xs text-slate-950 outline-none focus:border-emerald-500"
                   >
                     <option value="5">★★★★★ (5 Stars)</option>
                     <option value="4">★★★★☆ (4 Stars)</option>
@@ -415,172 +376,171 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
                   placeholder="Share details of your clinical session..." 
                   value={reviewComment}
                   onChange={(e) => setReviewerComment(e.target.value)}
-                  className="form-input"
-                  rows={3}
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-xs text-slate-955 outline-none focus:border-emerald-500"
+                  rows={2}
                   style={{ resize: "none" }}
                 />
 
-                <button type="submit" disabled={reviewStatus === "PENDING"} className="btn btn-primary" style={{ alignSelf: "flex-end", padding: "8px 16px" }}>
-                  {reviewStatus === "PENDING" ? "Publishing..." : "Submit Review"}
+                <button type="submit" disabled={reviewStatus === "PENDING"} className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-2 px-4 rounded-lg self-end cursor-pointer">
+                  {reviewStatus === "PENDING" ? "Submitting..." : "Submit Review"}
                 </button>
               </form>
             )}
 
             {/* List Reviews */}
             {doc.reviews.length === 0 ? (
-              <p style={{ color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "20px" }}>
-                No reviews yet. Be the first to share your experience!
+              <p className="text-slate-400 text-xs italic text-center py-6">
+                No session feedback records yet. Be the first to list yours!
               </p>
             ) : (
-              doc.reviews.map((rev) => (
-                <div key={rev.id} style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: "16px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                    <strong style={{ fontSize: "0.95rem" }}>{rev.patientName}</strong>
-                    <span style={{ color: "var(--accent)" }}>{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</span>
+              <div className="flex flex-col gap-6">
+                {doc.reviews.map((rev) => (
+                  <div key={rev.id} className="border-b border-slate-100 last:border-b-0 pb-6 last:pb-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <strong className="text-xs text-slate-800 font-bold">{rev.patientName}</strong>
+                      <span className="text-amber-400 text-xs">{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</span>
+                    </div>
+                    <p className="text-slate-500 text-xs">"{rev.comment}"</p>
+                    <div className="text-[10px] text-slate-400 mt-2">
+                      Posted on {mounted ? new Date(rev.createdAt).toLocaleDateString() : new Date(rev.createdAt).toISOString().split('T')[0]} &bull; Verified Appointment
+                    </div>
                   </div>
-                  <p style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>"{rev.comment}"</p>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                    Posted on {new Date(rev.createdAt).toLocaleDateString()} &bull; Verified Appointment Review
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Right Column - Scheduler and Financial details */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
-          
-          {/* Session Booking Card */}
-          <div className="glass-panel" style={{ padding: "24px", background: "var(--bg-card)", border: "1.5px solid var(--primary-glow)", position: "sticky", top: "90px" }}>
-            <h3 style={{ fontSize: "1.2rem", marginBottom: "16px", color: "var(--text-main)" }}>Clinic Scheduler</h3>
+        {/* Right Column: Decluttered Scheduler Booking Form Box */}
+        <div className="lg:col-span-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm sticky top-24">
+            <h3 className="font-display font-bold text-sm text-slate-900 mb-4">Clinic Scheduler</h3>
 
             {bookingStatus === "SUCCESS" ? (
-              <div style={{ textAlign: "center", padding: "40px 10px", color: "var(--success)" }}>
-                <span style={{ fontSize: "3.5rem" }}>🎉</span>
-                <h4 style={{ margin: "16px 0 8px", fontSize: "1.1rem" }}>Session Booked!</h4>
-                <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                  Your appointment slot is confirmed. Email notifications have been issued.
+              <div className="text-center py-8 text-emerald-600">
+                <span className="text-4xl">🎉</span>
+                <h4 className="font-bold text-sm mt-4 mb-2">Appointment Confirmed!</h4>
+                <p className="text-slate-500 text-[11px] leading-relaxed">
+                  Your booking has been finalized. Confirmed slots are locked. Email intakes are issued.
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleBookingSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <form onSubmit={handleBookingSubmit} className="flex flex-col gap-3.5">
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Available Time Slots</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Available Session Openings</label>
                   <select 
                     required 
                     value={selectedSlotId}
                     onChange={(e) => setSelectedSlotId(e.target.value)}
-                    className="form-input"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none"
                   >
-                    <option value="">Select an opening...</option>
+                    <option value="">Select an hour...</option>
                     {doc.availability
                       .filter(s => !s.isBooked)
                       .map((slot) => {
                         const date = new Date(slot.startTime);
                         return (
                           <option key={slot.id} value={slot.id}>
-                            📅 {date.toLocaleDateString()} at {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {mounted 
+                              ? `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                              : date.toISOString().split('T')[0]
+                            }
                           </option>
                         );
                       })}
                   </select>
                   {doc.availability.filter(s => !s.isBooked).length === 0 && (
-                    <div style={{ color: "var(--danger)", fontSize: "0.75rem", marginTop: "4px" }}>
-                      No remaining availability slots. Check back soon.
-                    </div>
+                    <div className="text-red-500 text-[10px] mt-1">No slots available. Contact clinic for inquiries.</div>
                   )}
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Your Full Name *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Full Name *</label>
                   <input 
                     type="text" 
                     required
                     value={bookingName}
                     onChange={(e) => setBookingName(e.target.value)}
-                    placeholder="e.g. John Doe"
-                    className="form-input" 
+                    placeholder="John Doe"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none" 
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Your Email *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Email Address *</label>
                   <input 
                     type="email" 
                     required
                     value={bookingEmail}
                     onChange={(e) => setBookingEmail(e.target.value)}
                     placeholder="john@example.com"
-                    className="form-input" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none" 
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Mobile Number *</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Mobile Phone *</label>
                   <input 
                     type="tel" 
                     required
                     value={bookingPhone}
                     onChange={(e) => setBookingPhone(e.target.value)}
                     placeholder="(555) 000-0000"
-                    className="form-input" 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none" 
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, marginBottom: "6px" }}>Insurance Provider (Optional)</label>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Insurance Provider (Optional)</label>
                   <input 
                     type="text" 
                     value={bookingInsurance}
                     onChange={(e) => setBookingInsurance(e.target.value)}
-                    placeholder="e.g. Blue Cross"
-                    className="form-input" 
+                    placeholder="Aetna"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none" 
                   />
                 </div>
 
                 {bookingStatus === "ERROR" && (
-                  <div style={{ color: "var(--danger)", fontSize: "0.8rem", textAlign: "center" }}>
-                    🚨 Booking failed. Slot may have been taken.
-                  </div>
+                  <div className="text-red-500 text-xs text-center">🚨 Transaction failed. Try another slot.</div>
                 )}
 
                 <button 
                   type="submit" 
                   disabled={bookingStatus === "PENDING" || !selectedSlotId}
-                  className="btn btn-primary" 
-                  style={{ width: "100%", marginTop: "6px" }}
+                  className="w-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg cursor-pointer shadow-md shadow-emerald-600/10"
                 >
-                  {bookingStatus === "PENDING" ? "Booking slot..." : "Confirm Booking"}
+                  {bookingStatus === "PENDING" ? "Processing..." : "Confirm Booking"}
                 </button>
               </form>
             )}
 
-            {/* Financial Details Box */}
-            <div style={{ borderTop: "1px solid var(--border-color)", marginTop: "20px", paddingTop: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
-                <span style={{ color: "var(--text-muted)" }}>Session Cost</span>
-                <strong>${doc.sessionFee}</strong>
+            {/* Financial Details */}
+            <div className="border-t border-slate-100 mt-6 pt-4 flex flex-col gap-2.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Consultation Fee</span>
+                <strong className="text-slate-800">${doc.sessionFee}</strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
-                <span style={{ color: "var(--text-muted)" }}>Sliding Scale</span>
-                <strong>{doc.slidingScale ? "Yes, offered" : "No, standard"}</strong>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sliding Scale Options</span>
+                <strong className="text-slate-800">{doc.slidingScale ? "Available" : "Not Offered"}</strong>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
-                <span style={{ color: "var(--text-muted)" }}>Session format</span>
-                <strong>{doc.sessionFormat}</strong>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Consultation Format</span>
+                <strong className="text-slate-800">{doc.sessionFormat}</strong>
               </div>
-              <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "10px", marginTop: "4px" }}>
-                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "6px" }}>Accepted Insurances:</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+              <div className="border-t border-slate-100 pt-3 mt-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block mb-1.5">Accepted Insurances:</span>
+                <div className="flex flex-wrap gap-1">
                   {insurances.map((ins, i) => (
-                    <span key={i} className="badge badge-secondary" style={{ fontSize: "0.65rem", textTransform: "none" }}>{ins}</span>
+                    <span key={i} className="text-[9px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{ins}</span>
                   ))}
                 </div>
               </div>
             </div>
           </div>
         </div>
+
       </section>
     </div>
   );
