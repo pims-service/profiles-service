@@ -2,6 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+
+const Map = dynamic(() => import("@/components/Map"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 font-semibold text-xs animate-pulse">
+      Loading Clinic Map...
+    </div>
+  ),
+});
 
 interface DoctorResult {
   id: string;
@@ -224,7 +234,7 @@ export default function SearchDirectory() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Column: Simple Doctor Listing Grid */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        <div className="lg:col-span-7 flex flex-col gap-6">
           {loading ? (
             <div className="text-center py-20 text-slate-500 font-medium">
               Finding clinic availability...
@@ -326,7 +336,7 @@ export default function SearchDirectory() {
         </div>
 
         {/* Right Column: Sleek Map Panel Grid */}
-        <aside className="lg:col-span-4 h-[calc(100vh-180px)] sticky top-36">
+        <aside className="lg:col-span-5 h-[calc(100vh-180px)] sticky top-36">
           <div className="bg-white border border-slate-200 rounded-2xl h-full flex flex-col overflow-hidden shadow-sm">
             <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center flex-shrink-0">
               <div>
@@ -337,47 +347,19 @@ export default function SearchDirectory() {
             </div>
 
             {/* Map Body Canvas Grid */}
-            <div className="flex-grow bg-slate-100 relative overflow-hidden flex items-center justify-center">
-              {/* Radial maps mock vectors */}
-              <svg className="absolute w-full h-full inset-0 opacity-15" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50%" cy="50%" r="50" fill="none" stroke="black" strokeWidth="1" />
-                <circle cx="50%" cy="50%" r="100" fill="none" stroke="black" strokeWidth="1" strokeDasharray="3 3" />
-                <circle cx="50%" cy="50%" r="150" fill="none" stroke="black" strokeWidth="1" />
-                <line x1="0" y1="50%" x2="100%" y2="50%" stroke="black" strokeWidth="1" />
-                <line x1="50%" y1="0" x2="50%" y2="100%" stroke="black" strokeWidth="1" />
-              </svg>
-
-              {/* Central origin marker badge */}
-              <div className="absolute text-[11px] font-extrabold uppercase tracking-wide text-slate-400 select-none pointer-events-none">
-                {location || "GPS POINT"}
-              </div>
-
-              {/* Pin points plotted on scaled grid */}
-              {!loading && doctors.map((doc, idx) => {
-                const seedRandomLat = Math.sin(idx * 45) * 100 + 170;
-                const seedRandomLng = Math.cos(idx * 45) * 100 + 160;
-                const isActive = hoveredDocId === doc.id;
-
-                return (
-                  <div 
-                    key={doc.id}
-                    className="absolute cursor-pointer -translate-x-1/2 -translate-y-full transition-all duration-300"
-                    style={{ top: `${seedRandomLat}px`, left: `${seedRandomLng}px`, zIndex: isActive ? 50 : 10 }}
-                    onMouseEnter={() => setHoveredDocId(doc.id)}
-                    onMouseLeave={() => setHoveredDocId(null)}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className={`px-2 py-1 text-[10px] font-bold text-white rounded-lg border border-white shadow-md transition-all duration-300 whitespace-nowrap ${isActive ? 'scale-110 -translate-y-1 bg-emerald-600' : 'bg-slate-800'}`}>
-                        {doc.name.split(" ")[1] || doc.name}
-                      </div>
-                      <div className={`w-3 h-3 rounded-full border border-white shadow-sm mt-0.5 transition-colors ${isActive ? 'bg-emerald-500' : 'bg-slate-700'}`}></div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="flex-grow bg-slate-100 relative overflow-hidden">
+              <Map
+                doctors={doctors}
+                hoveredDocId={hoveredDocId}
+                centerLat={lat}
+                centerLng={lng}
+                onBookDoc={(doc) => setSelectedDocForBooking(doc)}
+                onHoverDoc={(docId) => setHoveredDocId(docId)}
+              />
             </div>
           </div>
         </aside>
+
 
       </section>
 

@@ -39,6 +39,9 @@ interface DoctorProfile {
   bioFull: string;
   headshotUrl: string;
   introVideoUrl: string | null;
+  websiteUrl: string | null;
+  linkedinUrl: string | null;
+  twitterUrl: string | null;
   sessionFormat: string;
   sessionFee: number;
   slidingScale: boolean;
@@ -265,7 +268,28 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
             </div>
 
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight mb-1 text-slate-900">{doc.user.name}, {doc.licenseType}</h1>
-            <p className="text-emerald-700 font-semibold text-xs mb-4">{doc.clinicName}</p>
+            <p className="text-emerald-700 font-semibold text-xs mb-3">{doc.clinicName}</p>
+
+            {/* Social handles & Portfolio links */}
+            {(doc.websiteUrl || doc.linkedinUrl || doc.twitterUrl) && (
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-4 select-none">
+                {doc.websiteUrl && (
+                  <a href={doc.websiteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/40 px-3 py-1 rounded-lg transition-colors">
+                    🌐 Website
+                  </a>
+                )}
+                {doc.linkedinUrl && (
+                  <a href={doc.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/40 px-3 py-1 rounded-lg transition-colors">
+                    🔗 LinkedIn
+                  </a>
+                )}
+                {doc.twitterUrl && (
+                  <a href={doc.twitterUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200/40 px-3 py-1 rounded-lg transition-colors">
+                    🐦 Twitter/X
+                  </a>
+                )}
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-5 text-xs text-slate-500">
               <div className="flex items-center gap-1 text-slate-500">
@@ -295,6 +319,16 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
             <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line">
               {doc.bioFull}
             </p>
+
+            {/* Interactive video pitch player */}
+            {doc.introVideoUrl && (
+              <div className="mt-8 border-t border-slate-100 pt-6">
+                <h4 className="font-display font-bold text-xs text-slate-800 uppercase tracking-wide mb-3">Introductory Video Pitch</h4>
+                <div className="max-w-md rounded-xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video shadow-md">
+                  <video src={doc.introVideoUrl} controls className="w-full h-full object-cover" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Specialties and Modalities */}

@@ -52,6 +52,9 @@ model PsychiatristProfile {
   bioFull            String             // Detailed narrative
   headshotUrl        String             // Profile photo path
   introVideoUrl      String?            // Optional video intro link
+  websiteUrl         String?            // Optional portfolio website URL
+  linkedinUrl        String?            // Optional professional LinkedIn URL
+  twitterUrl         String?            // Optional professional Twitter URL
 
   // Financials & Session Formats
   sessionFormat      String             // "IN_PERSON" | "TELEHEALTH" | "HYBRID"
