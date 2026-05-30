@@ -26,6 +26,7 @@ export async function GET(request: Request) {
         isSuspended: false,
       },
       include: {
+        user: true,
         reviews: true,
         availability: true,
       },
@@ -70,6 +71,7 @@ export async function GET(request: Request) {
 
       return {
         ...doc,
+        name: doc.user.name,
         specialtiesList,
         insurancesList,
         computedScore: score,

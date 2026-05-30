@@ -519,7 +519,7 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
             <div className="border-t border-slate-100 mt-6 pt-4 flex flex-col gap-2.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-500">Consultation Fee</span>
-                <strong className="text-slate-800">${doc.sessionFee}</strong>
+                <strong className="text-slate-800">{doc.sessionFee > 500 ? `PKR ${doc.sessionFee}` : `$${doc.sessionFee}`}</strong>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Sliding Scale Options</span>

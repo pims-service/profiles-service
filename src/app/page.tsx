@@ -170,71 +170,99 @@ export default function SearchDirectory() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      {/* Sleek, Clean Hero Search Banner */}
-      <section className="bg-gradient-to-r from-slate-900 to-slate-800 text-white py-12 px-6 shadow-sm">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight mb-3">
-            Find Verified Psychiatrists Near You
+      {/* Sleek, Ambient Modern Hero Search Area */}
+      <section className="relative overflow-hidden bg-white border-b border-slate-100 py-16 px-6">
+        {/* Soft background glows */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2"></div>
+        <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-sky-100/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative max-w-6xl mx-auto text-center">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider text-emerald-800 bg-emerald-50 uppercase mb-4 shadow-sm border border-emerald-100/50">
+            ⚡ Geospatial Clinical Registry
+          </span>
+          <h1 className="font-display text-3xl sm:text-5xl font-black tracking-tight mb-4 text-slate-900 leading-tight">
+            Find Verified Psychiatrists <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Closer to Home</span>
           </h1>
-          <p className="text-slate-300 text-lg mb-8 font-light max-w-2xl mx-auto">
-            Enable location services to discover nearby practitioners instantly with standard rankings and live booking slots.
+          <p className="text-slate-500 text-sm sm:text-base mb-8 max-w-xl mx-auto font-medium">
+            Search nearby practitioners instantly using high-precision GPS geolocation, composite standard rankings, and real-time open slots.
           </p>
 
-          {/* Decluttered Unified Search Input Bar */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 p-2 rounded-2xl max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-12 gap-2 shadow-lg">
+          {/* Minimalist Unified Search Input Bar */}
+          <div className="bg-white border border-slate-200/80 p-2 rounded-2xl max-w-4xl mx-auto flex flex-col md:flex-row gap-2 shadow-xl shadow-slate-100 relative z-10">
             
-            {/* Specialty */}
-            <div className="sm:col-span-4 flex items-center bg-transparent border-b sm:border-b-0 sm:border-r border-white/10 px-3">
-              <span className="text-emerald-400 mr-2">🔍</span>
+            {/* Specialty Selector */}
+            <div className="flex-1 flex items-center bg-slate-50 border border-slate-100 rounded-xl px-3 py-1">
+              <span className="text-xs text-slate-400 mr-2">🔍</span>
               <select 
                 value={specialty} 
                 onChange={(e) => setSpecialty(e.target.value)}
-                className="w-full bg-transparent text-white text-sm outline-none cursor-pointer py-3 pr-4 [&>option]:text-slate-900"
+                className="w-full bg-transparent text-slate-800 text-xs font-semibold outline-none cursor-pointer py-2.5"
               >
-                <option value="">All Specialties / Symptoms</option>
+                <option value="">All Specialties & Symptoms</option>
                 <option value="ADHD">ADHD / Attention Focus</option>
                 <option value="Anxiety">Anxiety & Panic Disorders</option>
                 <option value="Depression">Depression & Moods</option>
                 <option value="PTSD">PTSD & Trauma Recovery</option>
                 <option value="Bipolar Disorder">Bipolar Disorder</option>
-                <option value="Sleep Disorders">Sleep / Insomnia</option>
+                <option value="Sleep Disorders">Sleep & Insomnia</option>
                 <option value="Women's Mental Health">Women's Mental Health</option>
               </select>
             </div>
 
-            {/* Manually Input Location or coordinates */}
-            <div className="sm:col-span-4 flex items-center bg-transparent border-b sm:border-b-0 sm:border-r border-white/10 px-3">
-              <span className="text-emerald-400 mr-2">📍</span>
+            {/* Manually Input Location */}
+            <div className="flex-1 flex items-center bg-slate-50 border border-slate-100 rounded-xl px-3 py-1">
+              <span className="text-xs text-slate-400 mr-2">📍</span>
               <input 
                 type="text" 
-                placeholder="City or ZIP Code"
+                placeholder="Enter City or ZIP Code"
                 value={location}
                 onChange={(e) => {
                   setLat(null);
                   setLng(null);
                   setLocation(e.target.value);
                 }}
-                className="w-full bg-transparent text-white text-sm outline-none py-3 placeholder-white/50"
+                className="w-full bg-transparent text-slate-800 text-xs font-semibold outline-none py-2.5 placeholder-slate-400"
               />
             </div>
 
-            {/* Geolocation target trigger button */}
-            <div className="sm:col-span-4 flex items-center justify-between px-2 gap-2">
+            {/* Buttons */}
+            <div className="flex gap-2 min-w-[280px]">
               <button 
                 onClick={handleGeolocate}
-                className="flex-grow inline-flex items-center justify-center gap-1.5 text-xs font-bold text-slate-100 bg-white/15 hover:bg-white/25 transition-all py-3 px-3 rounded-lg cursor-pointer"
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all py-3 px-4 rounded-xl cursor-pointer ${locationStatus === 'SUCCESS' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/50'}`}
               >
-                🎯 {locationStatus === "PROMPTING" ? "Locating..." : locationStatus === "SUCCESS" ? "GPS Active" : "Detect My Location"}
+                🎯 {locationStatus === "PROMPTING" ? "Locating..." : locationStatus === "SUCCESS" ? "GPS Active" : "Use GPS Location"}
               </button>
               <button 
                 onClick={fetchResults}
-                className="inline-flex items-center justify-center text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-all py-3 px-6 rounded-lg cursor-pointer shadow-md"
+                className="inline-flex items-center justify-center text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all py-3 px-6 rounded-xl cursor-pointer shadow-md shadow-emerald-600/15"
               >
-                Find Slots
+                Find Openings
               </button>
             </div>
 
           </div>
+
+          {/* Modern Quick-Filter Pills */}
+          <div className="flex flex-wrap justify-center items-center gap-2 mt-6 max-w-3xl mx-auto">
+            <span className="text-[10px] uppercase font-bold text-slate-400 mr-2">Quick filters:</span>
+            {[
+              { id: "", label: "🌿 All Matches" },
+              { id: "Anxiety", label: "🧘 Anxiety" },
+              { id: "Depression", label: "☀️ Depression" },
+              { id: "ADHD", label: "⚡ ADHD" },
+              { id: "PTSD", label: "🛡️ PTSD / Trauma" }
+            ].map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => setSpecialty(pill.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border cursor-pointer ${specialty === pill.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'}`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+
         </div>
       </section>
 
@@ -381,7 +409,7 @@ export default function SearchDirectory() {
                   <div className="border-t border-slate-100 pt-4 mt-4 flex items-center justify-between flex-wrap gap-3">
                     <div className="flex gap-6 text-[11px] text-slate-500">
                       <div>
-                        💰 <strong className="text-slate-800">${doc.sessionFee}</strong> / session
+                        💰 <strong className="text-slate-800">{doc.sessionFee > 500 ? `PKR ${doc.sessionFee}` : `$${doc.sessionFee}`}</strong> / session
                       </div>
                       <div>
                         💻 <strong>{doc.sessionFormat === "HYBRID" ? "Hybrid Clinic" : doc.sessionFormat === "TELEHEALTH" ? "Virtual Only" : "In-Person Clinic"}</strong>
@@ -454,7 +482,7 @@ export default function SearchDirectory() {
                   >
                     <div className="flex flex-col items-center">
                       <div className={`px-2 py-1 text-[10px] font-bold text-white rounded-lg border border-white shadow-md transition-all duration-300 whitespace-nowrap ${isActive ? 'scale-110 -translate-y-1 bg-emerald-600' : 'bg-slate-800'}`}>
-                        {doc.name.split(" ")[1]}
+                        {doc.name.split(" ")[1] || doc.name}
                       </div>
                       <div className={`w-3 h-3 rounded-full border border-white shadow-sm mt-0.5 transition-colors ${isActive ? 'bg-emerald-500' : 'bg-slate-700'}`}></div>
                     </div>
