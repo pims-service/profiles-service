@@ -170,58 +170,31 @@ export default function SearchDirectory() {
 
   return (
     <div className="bg-slate-50 min-h-screen">
-      {/* Sleek, Ambient Modern Hero Search Area */}
-      <section className="relative overflow-hidden bg-white border-b border-slate-100 py-16 px-6">
-        {/* Soft background glows */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2"></div>
-        <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-sky-100/20 rounded-full blur-3xl"></div>
-        
-        <div className="relative max-w-6xl mx-auto text-center">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider text-emerald-800 bg-emerald-50 uppercase mb-4 shadow-sm border border-emerald-100/50">
-            ⚡ Geospatial Clinical Registry
-          </span>
-          <h1 className="font-display text-3xl sm:text-5xl font-black tracking-tight mb-4 text-slate-900 leading-tight">
-            Find Verified Psychiatrists <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Closer to Home</span>
+      {/* Spaced, Elegant Human-Crafted Hero Search Area */}
+      <section className="bg-white border-b border-slate-200/80 py-16 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight mb-4 text-slate-900 leading-tight">
+            Find a psychologist or psychiatrist near you
           </h1>
-          <p className="text-slate-500 text-sm sm:text-base mb-8 max-w-xl mx-auto font-medium">
-            Search nearby practitioners instantly using high-precision GPS geolocation, composite standard rankings, and real-time open slots.
+          <p className="text-slate-500 text-sm sm:text-base mb-8 max-w-xl mx-auto leading-relaxed">
+            Search verified mental health practitioners in Pakistan. Automatically find clinics near your coordinates or input your city manually to book available slots.
           </p>
 
-          {/* Minimalist Unified Search Input Bar */}
-          <div className="bg-white border border-slate-200/80 p-2 rounded-2xl max-w-4xl mx-auto flex flex-col md:flex-row gap-2 shadow-xl shadow-slate-100 relative z-10">
+          {/* Minimalist Search Input Bar */}
+          <div className="bg-white border border-slate-200/80 p-2.5 rounded-2xl max-w-3xl mx-auto flex flex-col md:flex-row gap-2.5 shadow-md shadow-slate-100/50">
             
-            {/* Specialty Selector */}
-            <div className="flex-1 flex items-center bg-slate-50 border border-slate-100 rounded-xl px-3 py-1">
-              <span className="text-xs text-slate-400 mr-2">🔍</span>
-              <select 
-                value={specialty} 
-                onChange={(e) => setSpecialty(e.target.value)}
-                className="w-full bg-transparent text-slate-800 text-xs font-semibold outline-none cursor-pointer py-2.5"
-              >
-                <option value="">All Specialties & Symptoms</option>
-                <option value="ADHD">ADHD / Attention Focus</option>
-                <option value="Anxiety">Anxiety & Panic Disorders</option>
-                <option value="Depression">Depression & Moods</option>
-                <option value="PTSD">PTSD & Trauma Recovery</option>
-                <option value="Bipolar Disorder">Bipolar Disorder</option>
-                <option value="Sleep Disorders">Sleep & Insomnia</option>
-                <option value="Women's Mental Health">Women's Mental Health</option>
-              </select>
-            </div>
-
             {/* Manually Input Location */}
-            <div className="flex-1 flex items-center bg-slate-50 border border-slate-100 rounded-xl px-3 py-1">
-              <span className="text-xs text-slate-400 mr-2">📍</span>
+            <div className="flex-grow flex items-center bg-slate-50 border border-slate-100 rounded-xl px-4 py-1">
               <input 
                 type="text" 
-                placeholder="Enter City or ZIP Code"
+                placeholder="Enter city name (e.g. Karachi or Lahore)"
                 value={location}
                 onChange={(e) => {
                   setLat(null);
                   setLng(null);
                   setLocation(e.target.value);
                 }}
-                className="w-full bg-transparent text-slate-800 text-xs font-semibold outline-none py-2.5 placeholder-slate-400"
+                className="w-full bg-transparent text-slate-800 text-xs font-semibold outline-none py-3 placeholder-slate-400"
               />
             </div>
 
@@ -229,103 +202,23 @@ export default function SearchDirectory() {
             <div className="flex gap-2 min-w-[280px]">
               <button 
                 onClick={handleGeolocate}
-                className={`flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all py-3 px-4 rounded-xl cursor-pointer ${locationStatus === 'SUCCESS' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/50'}`}
+                className={`flex-grow inline-flex items-center justify-center text-xs font-bold transition-all py-3.5 px-4 rounded-xl cursor-pointer ${locationStatus === 'SUCCESS' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/50'}`}
               >
-                🎯 {locationStatus === "PROMPTING" ? "Locating..." : locationStatus === "SUCCESS" ? "GPS Active" : "Use GPS Location"}
+                {locationStatus === "PROMPTING" ? "Detecting location..." : locationStatus === "SUCCESS" ? "GPS Location Active" : "Detect Location"}
               </button>
               <button 
                 onClick={fetchResults}
-                className="inline-flex items-center justify-center text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all py-3 px-6 rounded-xl cursor-pointer shadow-md shadow-emerald-600/15"
+                className="inline-flex items-center justify-center text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all py-3.5 px-6 rounded-xl cursor-pointer shadow-sm"
               >
-                Find Openings
+                Search
               </button>
             </div>
 
           </div>
-
-          {/* Modern Quick-Filter Pills */}
-          <div className="flex flex-wrap justify-center items-center gap-2 mt-6 max-w-3xl mx-auto">
-            <span className="text-[10px] uppercase font-bold text-slate-400 mr-2">Quick filters:</span>
-            {[
-              { id: "", label: "🌿 All Matches" },
-              { id: "Anxiety", label: "🧘 Anxiety" },
-              { id: "Depression", label: "☀️ Depression" },
-              { id: "ADHD", label: "⚡ ADHD" },
-              { id: "PTSD", label: "🛡️ PTSD / Trauma" }
-            ].map((pill) => (
-              <button
-                key={pill.id}
-                onClick={() => setSpecialty(pill.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border cursor-pointer ${specialty === pill.id ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'}`}
-              >
-                {pill.label}
-              </button>
-            ))}
-          </div>
-
         </div>
       </section>
 
-      {/* Decluttered Horizontal Filter Bar under Hero */}
-      <section className="bg-white border-b border-slate-200 py-4 px-6 shadow-sm sticky top-16 z-30">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            
-            {/* Session format pill */}
-            <select 
-              value={format} 
-              onChange={(e) => setFormat(e.target.value)}
-              className="bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 px-3 py-2 rounded-lg border-none outline-none cursor-pointer"
-            >
-              <option value="ANY">Any Format</option>
-              <option value="TELEHEALTH">Telehealth Only</option>
-              <option value="IN_PERSON">In-Office Clinic</option>
-            </select>
 
-            {/* Insurances accepted pill */}
-            <select 
-              value={insurance} 
-              onChange={(e) => setInsurance(e.target.value)}
-              className="bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 px-3 py-2 rounded-lg border-none outline-none cursor-pointer"
-            >
-              <option value="">Select Insurance Provider</option>
-              <option value="Aetna">Aetna</option>
-              <option value="Blue Cross Blue Shield">Blue Cross Blue Shield</option>
-              <option value="Cigna">Cigna</option>
-              <option value="UnitedHealthcare">UnitedHealthcare</option>
-              <option value="Medicare">Medicare</option>
-            </select>
-
-            {/* Fee Limits pill */}
-            <select 
-              value={maxFee} 
-              onChange={(e) => setMaxFee(e.target.value)}
-              className="bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 px-3 py-2 rounded-lg border-none outline-none cursor-pointer"
-            >
-              <option value="999">Any Budget Price</option>
-              <option value="200">Max $200 / session</option>
-              <option value="300">Max $300 / session</option>
-              <option value="400">Max $400 / session</option>
-            </select>
-
-            {/* Sort Mode pill */}
-            <select 
-              value={sort} 
-              onChange={(e) => setSort(e.target.value)}
-              className="bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 px-3 py-2 rounded-lg border-none outline-none cursor-pointer"
-            >
-              <option value="best_match">⭐ Sort: Best Match</option>
-              <option value="distance">📍 Sort: Closest Distance</option>
-              <option value="rating">👍 Sort: Top Patient Rating</option>
-              <option value="price_low">💰 Sort: Fee (Low to High)</option>
-            </select>
-          </div>
-
-          <div className="text-xs font-medium text-slate-500">
-            {doctors.length} active psychiatrists resolved
-          </div>
-        </div>
-      </section>
 
       {/* Decluttered Main Columns Layout */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -334,14 +227,13 @@ export default function SearchDirectory() {
         <div className="lg:col-span-8 flex flex-col gap-6">
           {loading ? (
             <div className="text-center py-20 text-slate-500 font-medium">
-              🌀 Finding clinic availability nearby...
+              Finding clinic availability...
             </div>
           ) : doctors.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm">
-              <span className="text-4xl">🧐</span>
-              <h3 className="text-lg font-bold text-slate-900 mt-4 mb-2">No Verified Providers Found</h3>
-              <p className="text-slate-500 text-sm max-w-sm mx-auto mb-6">
-                There are no active clinic matches listed within this radius. Try selecting "🎯 Detect My Location" or search "New York" to load live demo data.
+              <h3 className="text-lg font-bold text-slate-900 mb-2">No verified providers found</h3>
+              <p className="text-slate-500 text-xs max-w-sm mx-auto mb-6 leading-relaxed">
+                There are no active clinic matches listed within this radius. Try selecting "Detect Location" or search "New York" to load live demo data.
               </p>
               <button 
                 onClick={() => { setLocation("New York"); setSpecialty(""); }}
@@ -370,26 +262,20 @@ export default function SearchDirectory() {
                       <div>
                         <h3 className="font-display text-lg font-bold text-slate-900 flex items-center gap-2 flex-wrap">
                           {doc.name}
-                          <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md">
-                            ✓ Verified
+                          <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 rounded">
+                            Verified
                           </span>
                         </h3>
                         <p className="text-xs font-bold text-slate-500 mt-0.5">{doc.clinicName} &bull; {doc.licenseType}</p>
                       </div>
-
-                      {/* Score indicator badge */}
-                      <div className="bg-slate-50 border border-slate-100 px-3 py-1 rounded-xl text-center flex items-center gap-2">
-                        <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Standing</span>
-                        <strong className="text-sm font-extrabold text-emerald-600">{doc.computedScore}/100</strong>
-                      </div>
                     </div>
 
                     {/* Ratings */}
-                    <div className="flex items-center gap-1 text-amber-500 font-semibold text-xs mt-2">
-                      <span>{"★".repeat(Math.round(doc.avgRating))}</span>
-                      <span className="text-slate-300">{"★".repeat(5 - Math.round(doc.avgRating))}</span>
-                      <span className="text-slate-900 ml-1">{doc.avgRating ? doc.avgRating.toFixed(1) : "NEW"}</span>
-                      <span className="text-slate-400 font-normal">({doc.reviewCount} patient reviews)</span>
+                    <div className="flex items-center gap-1.5 text-xs mt-2 text-slate-500">
+                      <span className="text-amber-500">★</span>
+                      <strong className="text-slate-800 font-semibold">{doc.avgRating ? doc.avgRating.toFixed(1) : "NEW"}</strong>
+                      <span>&bull;</span>
+                      <span>{doc.reviewCount} {doc.reviewCount === 1 ? 'review' : 'reviews'}</span>
                     </div>
 
                     {/* Bio Narrative */}
@@ -407,16 +293,16 @@ export default function SearchDirectory() {
 
                   {/* Financials & distance log */}
                   <div className="border-t border-slate-100 pt-4 mt-4 flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex gap-6 text-[11px] text-slate-500">
+                    <div className="flex gap-5 text-slate-500 text-[11px]">
                       <div>
-                        💰 <strong className="text-slate-800">{doc.sessionFee > 500 ? `PKR ${doc.sessionFee}` : `$${doc.sessionFee}`}</strong> / session
+                        Session Fee: <strong className="text-slate-800 font-bold">{doc.sessionFee > 500 ? `PKR ${doc.sessionFee}` : `$${doc.sessionFee}`}</strong>
                       </div>
                       <div>
-                        💻 <strong>{doc.sessionFormat === "HYBRID" ? "Hybrid Clinic" : doc.sessionFormat === "TELEHEALTH" ? "Virtual Only" : "In-Person Clinic"}</strong>
+                        Format: <strong className="text-slate-800 font-bold">{doc.sessionFormat === "HYBRID" ? "Hybrid" : doc.sessionFormat === "TELEHEALTH" ? "Virtual" : "In-Person"}</strong>
                       </div>
                       {doc.computedDistance !== 9999 && (
                         <div>
-                          📍 <strong>{doc.computedDistance.toFixed(1)} miles</strong> away
+                          Distance: <strong className="text-slate-800 font-bold">{doc.computedDistance.toFixed(1)} miles</strong>
                         </div>
                       )}
                     </div>
@@ -605,7 +491,7 @@ export default function SearchDirectory() {
                 </div>
 
                 {bookingStatus === "ERROR" && (
-                  <div className="text-red-500 text-xs text-center">🚨 Slot already reserved. Select another opening.</div>
+                  <div className="text-red-500 text-xs text-center">Slot already reserved. Select another opening.</div>
                 )}
 
                 <div className="flex gap-3 mt-2">

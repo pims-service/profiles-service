@@ -19,16 +19,14 @@ export default function RootLayout({
         <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             {/* Logo */}
-            <a href="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-slate-900 hover:opacity-90">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
-                🌱
-              </span>
-              <span>Mind<strong className="text-emerald-600 font-extrabold">Link</strong></span>
+            <a href="/" className="flex items-center gap-2 font-display text-xl font-extrabold tracking-tight text-slate-900 hover:opacity-90">
+              <div className="h-6 w-6 rounded bg-emerald-600 flex items-center justify-center text-white text-[10px] font-black tracking-tighter shadow-sm">ML</div>
+              <span>MindLink</span>
             </a>
 
             {/* Quick Links */}
             <nav className="hidden md:flex gap-8">
-              <a href="/" className="text-sm font-semibold text-slate-900 border-b-2 border-emerald-500 pb-1 pt-1">
+              <a href="/" className="text-sm font-semibold text-slate-900 border-b-2 border-emerald-600 pb-1 pt-1">
                 Find Doctors
               </a>
               <a href="/doctor" className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors pt-1">
@@ -60,11 +58,11 @@ export default function RootLayout({
         <footer className="border-t border-slate-200 bg-white py-8">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 font-display text-md font-bold text-slate-900">
-              <span className="text-emerald-500">🌱</span>
-              <span>MindLink Service</span>
+              <div className="h-4 w-4 rounded bg-emerald-600 shadow-sm inline-block"></div>
+              <span>MindLink Directory</span>
             </div>
             <div className="text-xs text-slate-500">
-              &copy; {new Date().getFullYear()} Rebuilt MindLink Directory. GPS Geolocation & Standard Ranking.
+              &copy; {new Date().getFullYear()} MindLink. All rights reserved.
             </div>
           </div>
         </footer>

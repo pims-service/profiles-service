@@ -247,34 +247,34 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
         }}
       />
 
-      {/* Doctor Header Banner */}
-      <section className="bg-gradient-to-r from-slate-900 to-slate-800 text-white py-12 px-6 shadow-sm">
+      {/* Crisp Light-Themed Human-Designed Doctor Header */}
+      <section className="bg-white border-b border-slate-200/80 py-12 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-8">
-          <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white/10 shadow-lg flex-shrink-0 bg-slate-800">
+          <div className="w-32 h-32 rounded-2xl overflow-hidden border border-slate-200 shadow-sm flex-shrink-0 bg-slate-50">
             <img src={doc.headshotUrl} alt={doc.user.name} className="w-full h-full object-cover" />
           </div>
 
           <div className="flex-grow text-center md:text-left">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
-              <span className="text-[10px] font-bold bg-emerald-500 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2.5 py-0.5 rounded uppercase tracking-wider">
                 Verified Provider
               </span>
-              <span className="text-[10px] font-semibold bg-white/10 text-slate-200 px-2.5 py-0.5 rounded-full">
-                NPI: {doc.npiNumber}
+              <span className="text-[9px] font-semibold bg-slate-105 text-slate-500 border border-slate-200/60 px-2.5 py-0.5 rounded">
+                Registration Code: {doc.npiNumber}
               </span>
             </div>
 
-            <h1 className="font-display text-3xl font-extrabold tracking-tight mb-1">{doc.user.name}, {doc.licenseType}</h1>
-            <p className="text-emerald-400 font-semibold text-sm mb-4">{doc.clinicName}</p>
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight mb-1 text-slate-900">{doc.user.name}, {doc.licenseType}</h1>
+            <p className="text-emerald-700 font-semibold text-xs mb-4">{doc.clinicName}</p>
 
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 text-xs text-slate-300">
-              <div className="flex items-center gap-1 text-amber-400 font-semibold">
-                <span>{"★".repeat(Math.round(avgRating))}</span>
-                <span className="text-white/20">{"★".repeat(5 - Math.round(avgRating))}</span>
-                <strong className="text-white ml-1">{avgRating ? avgRating.toFixed(1) : "NEW"}</strong>
-                <span className="text-slate-400">({doc.reviews.length} reviews)</span>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-5 text-xs text-slate-500">
+              <div className="flex items-center gap-1 text-slate-500">
+                <span className="text-amber-500">★</span>
+                <strong className="text-slate-800 font-semibold">{avgRating ? avgRating.toFixed(1) : "NEW"}</strong>
+                <span className="text-slate-400">({doc.reviews.length} {doc.reviews.length === 1 ? 'review' : 'reviews'})</span>
               </div>
-              <div>📍 {doc.address}, {doc.city}, {doc.state} {doc.zipCode}</div>
+              <div className="text-slate-300">&bull;</div>
+              <div>{doc.address}, {doc.city}, {doc.state} {doc.zipCode}</div>
             </div>
           </div>
         </div>

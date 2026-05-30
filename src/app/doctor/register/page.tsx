@@ -98,24 +98,19 @@ export default function PakistaniDoctorRegister() {
 
   return (
     <div className="bg-slate-50 min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
-      {/* Soft ambient background glows */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-100/25 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3"></div>
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-sky-100/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
-
-      <div className="bg-white border border-slate-200/80 rounded-2xl w-full max-w-4xl p-6 sm:p-10 shadow-xl shadow-slate-100/50 relative z-10 animate-fade">
+      <div className="bg-white border border-slate-200/80 rounded-2xl w-full max-w-4xl p-6 sm:p-10 shadow-md shadow-slate-100/50 relative z-10 animate-fade">
         
         {status === "SUCCESS" ? (
           <div className="text-center py-12 animate-fade">
-            <span className="text-6xl mb-6 block">🇵🇰</span>
-            <h2 className="font-display text-2xl font-black text-slate-900 mt-4 mb-2">Registry Application Submitted!</h2>
+            <h2 className="font-display text-2xl font-black text-slate-900 mt-4 mb-2">Registry Application Submitted</h2>
             <p className="text-slate-500 text-xs sm:text-sm max-w-md mx-auto mb-8 leading-relaxed">
-              Your practitioner details (CNIC: <strong className="text-slate-800">{cnicNumber}</strong>, License code: <strong className="text-slate-800">{licenseNumber}</strong>) have been securely saved. The MindLink Moderation Board will clearance-audit your credentials within 24 hours.
+              Your practitioner details (CNIC: <strong className="text-slate-800">{cnicNumber}</strong>, License code: <strong className="text-slate-800">{licenseNumber}</strong>) have been securely saved. The MindLink Board will clearance-audit your credentials within 24 hours.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
               <Link href="/" className="text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-5 py-3 rounded-xl transition-colors border border-slate-200/50">
                 View Search Directory
               </Link>
-              <Link href="/doctor/login" className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-5 py-3 rounded-xl shadow-md shadow-emerald-600/10 transition-all">
+              <Link href="/doctor/login" className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-5 py-3 rounded-xl transition-all">
                 Sign In to Workspace
               </Link>
             </div>
@@ -124,7 +119,7 @@ export default function PakistaniDoctorRegister() {
           <div>
             <div className="border-b border-slate-100 pb-6 mb-8 text-center sm:text-left">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 uppercase tracking-wider border border-emerald-100/50">
-                🇵🇰 Clinical Provider Registry
+                Clinical Provider Registry
               </span>
               <h1 className="font-display text-2xl font-extrabold text-slate-900 mt-3">Register as a Verified Practitioner</h1>
               <p className="text-slate-400 text-xs mt-1">Provide standard licensing, credentials, and practice information to initiate verification clearing.</p>
@@ -132,7 +127,7 @@ export default function PakistaniDoctorRegister() {
 
             {errorMessage && (
               <div className="bg-red-50 border border-red-100 text-red-700 text-xs p-3.5 rounded-xl mb-8 text-center font-semibold">
-                🚨 {errorMessage}
+                {errorMessage}
               </div>
             )}
 
@@ -254,11 +249,10 @@ export default function PakistaniDoctorRegister() {
                 </div>
 
                 {/* Scanned Certificate proofs */}
-                <div className="border border-dashed border-slate-200 hover:border-emerald-300 bg-slate-50/50 rounded-2xl p-4.5 text-center transition-colors">
-                  <span className="text-2xl mb-1.5 block">📄</span>
-                  <strong className="block text-[10px] text-slate-700 uppercase tracking-wide">Verification Certificate uploads</strong>
-                  <span className="text-[9px] text-slate-400 mt-1 block leading-normal">Scanned CNIC and Clinical Board Degrees (PDF format)</span>
-                  <input type="file" disabled className="text-[9px] block mx-auto mt-2 text-slate-400 border-none bg-transparent cursor-not-allowed" />
+                <div className="border border-dashed border-slate-200 hover:border-emerald-300 bg-slate-50/50 rounded-2xl p-6 text-center transition-colors">
+                  <strong className="block text-xs text-slate-700 uppercase tracking-wider mb-1">Verification Certificate uploads</strong>
+                  <span className="text-[10px] text-slate-400 block leading-normal">Attach scanned CNIC and Clinical Board Degrees (PDF format)</span>
+                  <input type="file" disabled className="text-[10px] block mx-auto mt-3 text-slate-400 border-none bg-transparent cursor-not-allowed" />
                 </div>
 
               </div>
