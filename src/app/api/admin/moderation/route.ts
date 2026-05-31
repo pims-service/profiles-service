@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { calculateProfileScore } from "@/lib/ranking";
+import { resolveCoordinates } from "@/app/api/doctor/register/route";
 
 // Get admin statistics and all doctor profiles
 export async function GET() {
@@ -65,10 +66,17 @@ export async function PUT(request: Request) {
     let updatedData: any = {};
 
     if (action === "APPROVE") {
+      // Dynamic geospatial coordinate resolution on approval
+      const city = currentProfile.city || "New York";
+      const state = currentProfile.state || "NY";
+      const { latitude, longitude } = resolveCoordinates(city, state);
+
       updatedData = {
         verificationStatus: "APPROVED",
         isVerified: true,
         rejectionReason: null,
+        latitude,
+        longitude,
       };
     } else if (action === "REJECT") {
       updatedData = {

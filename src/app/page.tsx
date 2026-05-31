@@ -225,6 +225,81 @@ export default function SearchDirectory() {
             </div>
 
           </div>
+
+          {/* Minimalist Filters Ribbon with Radius Search */}
+          <div className="mt-6 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-center gap-4 text-xs select-none">
+            
+            {/* Radius Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-medium">Radius:</span>
+              <select
+                value={distance}
+                onChange={(e) => setDistance(e.target.value)}
+                className="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 font-semibold text-slate-700 cursor-pointer outline-none focus:border-slate-400 focus:bg-white transition-all"
+              >
+                <option value="10">10 Miles</option>
+                <option value="25">25 Miles</option>
+                <option value="50">50 Miles</option>
+                <option value="100">100 Miles</option>
+                <option value="250">250 Miles</option>
+              </select>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
+
+            {/* Session Format Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-medium">Format:</span>
+              <select
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+                className="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 font-semibold text-slate-700 cursor-pointer outline-none focus:border-slate-400 focus:bg-white transition-all"
+              >
+                <option value="ANY">Any Format</option>
+                <option value="TELEHEALTH">Virtual Only</option>
+                <option value="IN_PERSON">In-Person Only</option>
+              </select>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
+
+            {/* Specialty Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-medium">Specialty:</span>
+              <select
+                value={specialty}
+                onChange={(e) => setSpecialty(e.target.value)}
+                className="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 font-semibold text-slate-700 cursor-pointer outline-none focus:border-slate-400 focus:bg-white transition-all"
+              >
+                <option value="">All Specialties</option>
+                <option value="Anxiety">Anxiety</option>
+                <option value="Depression">Depression</option>
+                <option value="ADHD">ADHD</option>
+                <option value="Bipolar">Bipolar</option>
+                <option value="PTSD">PTSD</option>
+              </select>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
+
+            {/* Sort Order */}
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-medium">Sort By:</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 font-semibold text-slate-700 cursor-pointer outline-none focus:border-slate-400 focus:bg-white transition-all"
+              >
+                <option value="best_match">Best Match</option>
+                <option value="distance">Distance</option>
+                <option value="rating">Rating</option>
+                <option value="price_low">Price: Low to High</option>
+                <option value="price_high">Price: High to Low</option>
+              </select>
+            </div>
+
+          </div>
+
         </div>
       </section>
 

@@ -163,10 +163,10 @@ export default function AdminConsole() {
   }
 
   return (
-    <div className="bg-white min-h-screen flex flex-col md:flex-row font-sans text-slate-800 antialiased">
+    <div className="bg-white min-h-screen md:h-screen flex flex-col md:flex-row font-sans text-slate-800 antialiased md:overflow-hidden">
       
-      {/* Premium Minimal Sidebar */}
-      <aside className="w-full md:w-60 bg-slate-50/50 flex-shrink-0 flex flex-col justify-between p-6 h-auto md:h-screen sticky top-0 z-20 select-none border-b md:border-b-0 md:border-r border-slate-200/60">
+      {/* Premium Minimal Sidebar (Non-Scrollable) */}
+      <aside className="w-full md:w-60 bg-slate-50/50 flex-shrink-0 flex flex-col justify-between p-6 h-auto md:h-screen select-none border-b md:border-b-0 md:border-r border-slate-200/60 overflow-hidden">
         <div className="flex flex-col gap-8">
           
           {/* Brand Header */}
@@ -209,7 +209,7 @@ export default function AdminConsole() {
       </aside>
 
       {/* Main Content Workspace Panel */}
-      <main className="flex-grow bg-white p-6 sm:p-10 lg:p-12 overflow-y-auto">
+      <main className="flex-grow bg-white p-6 sm:p-10 lg:p-12 md:h-full overflow-y-auto">
         
         {/* Simple Page Header */}
         <div className="mb-6 select-none">
@@ -254,7 +254,13 @@ export default function AdminConsole() {
                     {/* Primary Info */}
                     <div className="flex-grow max-w-3xl">
                       <div className="flex items-baseline gap-2 flex-wrap">
-                        <h2 className="font-bold text-base text-slate-950">{doc.user.name}</h2>
+                        <Link 
+                          href={`/doctor/${doc.id}`} 
+                          target="_blank" 
+                          className="hover:underline text-slate-950 hover:text-black transition-colors"
+                        >
+                          <h2 className="font-bold text-base">{doc.user.name}</h2>
+                        </Link>
                         <span className="text-xs text-slate-400">{doc.licenseType}</span>
                       </div>
                       
@@ -340,7 +346,16 @@ export default function AdminConsole() {
                         <tr key={doc.id} className={`border-b border-slate-100 last:border-b-0 hover:bg-slate-50/20 ${doc.isSuspended ? 'bg-slate-50/30 text-slate-400' : ''}`}>
                           
                           <td className="py-3 px-4 font-medium text-slate-900">
-                            <div>{doc.user.name}, <span className="font-normal text-slate-400">{doc.licenseType}</span></div>
+                            <div>
+                              <Link 
+                                href={`/doctor/${doc.id}`} 
+                                target="_blank" 
+                                className="hover:underline text-slate-950 hover:text-black transition-colors"
+                              >
+                                {doc.user.name}
+                              </Link>
+                              , <span className="font-normal text-slate-400">{doc.licenseType}</span>
+                            </div>
                             <span className="text-[10px] text-slate-400 font-mono font-normal">{doc.user.email}</span>
                           </td>
 
