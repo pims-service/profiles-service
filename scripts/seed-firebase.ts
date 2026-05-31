@@ -1,3 +1,6 @@
+import { loadEnvConfig } from "@next/env";
+loadEnvConfig(process.cwd());
+
 import * as admin from "firebase-admin";
 import * as geofire from "geofire-common";
 
