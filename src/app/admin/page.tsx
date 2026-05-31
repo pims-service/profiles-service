@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Review {
   id: string;
@@ -39,6 +40,7 @@ interface Stats {
 }
 
 export default function AdminConsole() {
+  const router = useRouter();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 });
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,22 @@ export default function AdminConsole() {
   };
 
   useEffect(() => {
+    const raw = localStorage.getItem("doctor_session");
+    if (!raw) {
+      router.push("/doctor/login");
+      return;
+    }
+    try {
+      const sess = JSON.parse(raw);
+      if (sess.role !== "ADMIN") {
+        router.push("/doctor/login");
+        return;
+      }
+    } catch {
+      router.push("/doctor/login");
+      return;
+    }
+
     fetchModerationData();
   }, []);
 

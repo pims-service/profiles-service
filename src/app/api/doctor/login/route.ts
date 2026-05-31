@@ -34,9 +34,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.role !== "PSYCHIATRIST") {
+    if (user.role !== "PSYCHIATRIST" && user.role !== "ADMIN") {
       return NextResponse.json(
-        { success: false, error: "This credential does not possess provider privileges." },
+        { success: false, error: "This credential does not possess administrative or provider privileges." },
         { status: 403 }
       );
     }
@@ -47,6 +47,7 @@ export async function POST(request: Request) {
         id: user.id,
         email: user.email,
         name: user.name,
+        role: user.role,
         profileId: user.profile?.id,
         verificationStatus: user.profile?.verificationStatus,
       },

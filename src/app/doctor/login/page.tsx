@@ -26,7 +26,11 @@ export default function DoctorLogin() {
       if (data.success) {
         // Save doctor session mock to localStorage
         localStorage.setItem("doctor_session", JSON.stringify(data.user));
-        router.push("/doctor");
+        if (data.user.role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/doctor");
+        }
       } else {
         setError(data.error || "Login failed. Check your clinical email.");
       }
@@ -39,8 +43,11 @@ export default function DoctorLogin() {
 
   // Automated Mock Session shortcuts for testing
   const handleQuickLogin = async (mockEmail: string) => {
+    const isSysAdmin = mockEmail === "admin@pims.com";
+    const pass = isSysAdmin ? "AdminPass123!" : "Password123!";
+
     setEmail(mockEmail);
-    setPassword("Password123!");
+    setPassword(pass);
     setLoading(true);
     setError("");
     
@@ -48,12 +55,18 @@ export default function DoctorLogin() {
       const res = await fetch("/api/doctor/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: mockEmail, password: "Password123!" }),
+        body: JSON.stringify({ email: mockEmail, password: pass }),
       });
       const data = await res.json();
       if (data.success) {
         localStorage.setItem("doctor_session", JSON.stringify(data.user));
-        router.push("/doctor");
+        if (isSysAdmin) {
+          router.push("/admin");
+        } else {
+          router.push("/doctor");
+        }
+      } else {
+        setError(data.error || "Auto sign-in failed.");
       }
     } catch {
       setError("Network issue during auto sign-in.");
@@ -137,6 +150,13 @@ export default function DoctorLogin() {
               style={{ fontSize: "0.75rem", width: "100%", padding: "8px", justifyContent: "flex-start", gap: "6px" }}
             >
               👩‍⚕️ Log in as <strong>Dr. Evelyn Chen, DO (CA)</strong>
+            </button>
+            <button 
+              onClick={() => handleQuickLogin("admin@pims.com")}
+              className="btn btn-secondary" 
+              style={{ fontSize: "0.75rem", width: "100%", padding: "8px", justifyContent: "flex-start", gap: "6px" }}
+            >
+              👑 Log in as <strong>System Administrator (Admin)</strong>
             </button>
           </div>
         </div>
