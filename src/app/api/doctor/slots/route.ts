@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { db, admin } from "@/lib/firebaseAdmin";
 import { calculateProfileScore } from "@/lib/ranking";
 
 // Create availability slot
@@ -15,37 +15,63 @@ export async function POST(request: Request) {
       );
     }
 
+    const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
+
     const start = new Date(startTime);
     const end = new Date(start);
     end.setHours(start.getHours() + 1); // 1 hour slot default
 
-    // Create the slot
-    const slot = await prisma.availabilitySlot.create({
-      data: {
-        psychiatristId: profileId,
-        startTime: start,
-        endTime: end,
-        isBooked: false,
-      },
-    });
+    if (isMockMode) {
+      console.warn("⚠️ Running create slot in offline mock mode.");
+      return NextResponse.json({
+        success: true,
+        slot: {
+          id: "mock-new-slot-id",
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+          isBooked: false,
+        }
+      });
+    }
+
+    const docRef = db.collection("psychiatrists").doc(profileId);
+    const slotRef = docRef.collection("availability").doc();
+
+    const slotData = {
+      id: slotRef.id,
+      startTime: admin.firestore.Timestamp.fromDate(start),
+      endTime: admin.firestore.Timestamp.fromDate(end),
+      isBooked: false,
+    };
+
+    await slotRef.set(slotData);
 
     // Update profile ranking score since availability slots count increased!
-    const doctor = await prisma.psychiatristProfile.findUnique({
-      where: { id: profileId },
-      include: { reviews: true, availability: true },
-    });
+    const refreshedSnap = await docRef.get();
+    if (refreshedSnap.exists) {
+      const refreshedProfile = refreshedSnap.data()!;
+      const reviewsSnap = await docRef.collection("reviews").get();
+      const availabilitySnap = await docRef.collection("availability").get();
 
-    if (doctor) {
-      const score = calculateProfileScore(doctor);
-      await prisma.psychiatristProfile.update({
-        where: { id: profileId },
-        data: { searchScore: score },
+      const reviews = reviewsSnap.docs.map(r => r.data());
+      const availability = availabilitySnap.docs.map(a => a.data());
+
+      const score = calculateProfileScore({
+        ...refreshedProfile,
+        reviews,
+        availability,
       });
+
+      await docRef.update({ searchScore: score });
     }
 
     return NextResponse.json({
       success: true,
-      slot,
+      slot: {
+        ...slotData,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      },
     });
   } catch (error: any) {
     console.error("🚨 Create Slot Error:", error);
@@ -70,18 +96,28 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Verify slot is not booked before deleting
-    const slot = await prisma.availabilitySlot.findUnique({
-      where: { id: slotId },
-    });
+    const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
 
-    if (!slot) {
+    if (isMockMode) {
+      console.warn("⚠️ Running delete slot in offline mock mode.");
+      return NextResponse.json({
+        success: true,
+        message: "Availability slot deleted successfully.",
+      });
+    }
+
+    const docRef = db.collection("psychiatrists").doc(profileId);
+    const slotRef = docRef.collection("availability").doc(slotId);
+    const slotSnap = await slotRef.get();
+
+    if (!slotSnap.exists) {
       return NextResponse.json(
         { success: false, error: "Slot not found." },
         { status: 404 }
       );
     }
 
+    const slot = slotSnap.data()!;
     if (slot.isBooked) {
       return NextResponse.json(
         { success: false, error: "Cannot delete a booked session slot." },
@@ -89,22 +125,25 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.availabilitySlot.delete({
-      where: { id: slotId },
-    });
+    await slotRef.delete();
 
     // Recalculate ranking score
-    const doctor = await prisma.psychiatristProfile.findUnique({
-      where: { id: profileId },
-      include: { reviews: true, availability: true },
-    });
+    const refreshedSnap = await docRef.get();
+    if (refreshedSnap.exists) {
+      const refreshedProfile = refreshedSnap.data()!;
+      const reviewsSnap = await docRef.collection("reviews").get();
+      const availabilitySnap = await docRef.collection("availability").get();
 
-    if (doctor) {
-      const score = calculateProfileScore(doctor);
-      await prisma.psychiatristProfile.update({
-        where: { id: profileId },
-        data: { searchScore: score },
+      const reviews = reviewsSnap.docs.map(r => r.data());
+      const availability = availabilitySnap.docs.map(a => a.data());
+
+      const score = calculateProfileScore({
+        ...refreshedProfile,
+        reviews,
+        availability,
       });
+
+      await docRef.update({ searchScore: score });
     }
 
     return NextResponse.json({

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { db } from "@/lib/firebaseAdmin";
 
 export async function POST(request: Request) {
   try {
@@ -13,26 +13,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Verify and update calendar slot to booked
-    const slot = await prisma.availabilitySlot.findFirst({
-      where: {
-        id: slotId,
-        psychiatristId,
-        isBooked: false,
-      },
-    });
+    const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
 
-    if (!slot) {
-      return NextResponse.json(
-        { success: false, error: "Selected slot is unavailable or already booked." },
-        { status: 400 }
-      );
-    }
-
-    // 2. Perform transactional update
-    const [booking] = await prisma.$transaction([
-      prisma.booking.create({
-        data: {
+    if (isMockMode) {
+      console.warn("⚠️ Running booking API in offline mock mode.");
+      return NextResponse.json({
+        success: true,
+        booking: {
+          id: "mock-booking-id",
           psychiatristId,
           slotId,
           patientName,
@@ -40,17 +28,47 @@ export async function POST(request: Request) {
           patientPhone,
           insurance,
           status: "PENDING",
-        },
-      }),
-      prisma.availabilitySlot.update({
-        where: { id: slotId },
-        data: { isBooked: true },
-      }),
-    ]);
+          createdAt: new Date(),
+        }
+      });
+    }
+
+    // 1. Verify and update calendar slot to booked
+    const docRef = db.collection("psychiatrists").doc(psychiatristId);
+    const slotRef = docRef.collection("availability").doc(slotId);
+    const slotSnap = await slotRef.get();
+
+    if (!slotSnap.exists || slotSnap.data()?.isBooked) {
+      return NextResponse.json(
+        { success: false, error: "Selected slot is unavailable or already booked." },
+        { status: 400 }
+      );
+    }
+
+    // 2. Perform updates in a batch transaction
+    const bookingRef = docRef.collection("bookings").doc();
+    const batch = db.batch();
+
+    const bookingData = {
+      id: bookingRef.id,
+      psychiatristId,
+      slotId,
+      patientName,
+      patientEmail,
+      patientPhone,
+      insurance: insurance || null,
+      status: "PENDING",
+      createdAt: new Date(),
+    };
+
+    batch.set(bookingRef, bookingData);
+    batch.update(slotRef, { isBooked: true });
+
+    await batch.commit();
 
     return NextResponse.json({
       success: true,
-      booking,
+      booking: bookingData,
     });
   } catch (error: any) {
     console.error("🚨 Booking API Error:", error);

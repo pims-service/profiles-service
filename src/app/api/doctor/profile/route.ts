@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { db } from "@/lib/firebaseAdmin";
 import { calculateProfileScore } from "@/lib/ranking";
 
 export async function PUT(request: Request) {
@@ -18,46 +18,82 @@ export async function PUT(request: Request) {
       );
     }
 
-    // 1. Fetch current profile
-    const profile = await prisma.psychiatristProfile.findUnique({
-      where: { id: profileId },
-    });
+    const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
 
-    if (!profile) {
+    if (isMockMode) {
+      console.warn("⚠️ Running doctor profile update in offline mock mode.");
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: profileId,
+          clinicName: clinicName || "Manhattan Integrative Psychiatry",
+          address: address || "120 Broadway, Suite 1400",
+          city: city || "New York",
+          state: state || "NY",
+          zipCode: zipCode || "10005",
+          sessionFormat: sessionFormat || "TELEHEALTH",
+          sessionFee: parseFloat(sessionFee) || 320,
+          slidingScale: !!slidingScale,
+          introVideoUrl: introVideoUrl || null,
+          bioFull: bioFull || "",
+          searchScore: 95,
+        }
+      });
+    }
+
+    const docRef = db.collection("psychiatrists").doc(profileId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
       return NextResponse.json(
         { success: false, error: "Profile not found." },
         { status: 404 }
       );
     }
 
-    // 2. Perform updates
-    const updatedProfile = await prisma.psychiatristProfile.update({
-      where: { id: profileId },
-      data: {
-        clinicName: clinicName || profile.clinicName,
-        address: address || profile.address,
-        city: city || profile.city,
-        state: state || profile.state,
-        zipCode: zipCode || profile.zipCode,
-        sessionFormat: sessionFormat || profile.sessionFormat,
-        sessionFee: parseFloat(sessionFee) || profile.sessionFee,
-        slidingScale: slidingScale !== undefined ? !!slidingScale : profile.slidingScale,
-        introVideoUrl: introVideoUrl !== undefined ? introVideoUrl : profile.introVideoUrl,
-        bioFull: bioFull || profile.bioFull,
-        lastActive: new Date(), // Set active timestamp
-      },
-      include: {
-        reviews: true,
-        availability: true,
-      },
+    const profile = docSnap.data()!;
+
+    // Perform updates
+    const updatedData = {
+      clinicName: clinicName || profile.clinicName,
+      address: address || profile.address,
+      city: city || profile.city,
+      state: state || profile.state,
+      zipCode: zipCode || profile.zipCode,
+      sessionFormat: sessionFormat || profile.sessionFormat,
+      sessionFee: parseFloat(sessionFee) || profile.sessionFee,
+      slidingScale: slidingScale !== undefined ? !!slidingScale : profile.slidingScale,
+      introVideoUrl: introVideoUrl !== undefined ? introVideoUrl : (profile.introVideoUrl || null),
+      bioFull: bioFull || profile.bioFull,
+      lastActive: new Date(), // Set active timestamp
+    };
+
+    await docRef.update(updatedData);
+
+    // Fetch refreshed complete state for score recalculation
+    const refreshedSnap = await docRef.get();
+    const refreshedProfile = refreshedSnap.data()!;
+
+    const reviewsSnap = await docRef.collection("reviews").get();
+    const availabilitySnap = await docRef.collection("availability").get();
+
+    const reviews = reviewsSnap.docs.map(r => r.data());
+    const availability = availabilitySnap.docs.map(a => a.data());
+
+    // Calculate score
+    const updatedScore = calculateProfileScore({
+      ...refreshedProfile,
+      reviews,
+      availability,
     });
 
-    // 3. Recalculate Search score!
-    const updatedScore = calculateProfileScore(updatedProfile);
-    const finalizedProfile = await prisma.psychiatristProfile.update({
-      where: { id: profileId },
-      data: { searchScore: updatedScore },
-    });
+    // Write final score
+    await docRef.update({ searchScore: updatedScore });
+
+    const finalizedProfile = {
+      ...refreshedProfile,
+      searchScore: updatedScore,
+    };
 
     return NextResponse.json({
       success: true,

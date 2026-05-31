@@ -1,8 +1,61 @@
-import { PsychiatristProfile, Review, AvailabilitySlot } from "@prisma/client";
+export interface Review {
+  id: string;
+  patientName: string;
+  rating: number;
+  comment: string;
+  isApproved: boolean;
+  createdAt: any;
+}
 
-interface FullProfile extends PsychiatristProfile {
-  reviews?: Review[];
-  availability?: AvailabilitySlot[];
+export interface AvailabilitySlot {
+  id: string;
+  startTime: any;
+  endTime: any;
+  isBooked: boolean;
+}
+
+export interface PsychiatristProfile {
+  id: string;
+  userId: string;
+  licenseType: string;
+  licenseState: string;
+  licenseNumber: string;
+  npiNumber: string;
+  isVerified: boolean;
+  verificationStatus: string;
+  rejectionReason?: string | null;
+  clinicName: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  latitude: number;
+  longitude: number;
+  specialties: string;
+  treatmentModalities: string;
+  targetDemographics: string;
+  languages: string;
+  bioPreview: string;
+  bioFull: string;
+  headshotUrl: string;
+  introVideoUrl?: string | null;
+  websiteUrl?: string | null;
+  linkedinUrl?: string | null;
+  twitterUrl?: string | null;
+  sessionFormat: string;
+  sessionFee: number;
+  slidingScale: boolean;
+  acceptedInsurances: string;
+  searchScore: number;
+  isSponsored: boolean;
+  lastActive: any;
+  isSuspended: boolean;
+  createdAt: any;
+}
+
+export interface FullProfile extends Partial<PsychiatristProfile> {
+  reviews?: Partial<Review>[];
+  availability?: Partial<AvailabilitySlot>[];
 }
 
 /**
@@ -37,13 +90,12 @@ export function calculateProfileScore(profile: FullProfile): number {
   score += completeness;
 
   // 2. Patient Reviews Sentiment (Max: 30 points)
-  // We use a simplified Bayesian average: (avgRating * count + 4.5 * 1) / (count + 1)
   const reviews = profile.reviews || [];
   const reviewCount = reviews.length;
   let reviewScore = 0;
 
   if (reviewCount > 0) {
-    const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount;
+    const avgRating = reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewCount;
     // Bayesian adjustment
     const bayesianRating = (avgRating * reviewCount + 4.5 * 2) / (reviewCount + 2);
     // Map 1-5 stars to 0-30 points: (bayesianRating - 1) / 4 * 30
@@ -55,13 +107,16 @@ export function calculateProfileScore(profile: FullProfile): number {
   score += reviewScore;
 
   // 3. Dynamic Calendar Availability (Max: 20 points)
-  // Prioritize practitioners with near-term schedule slots open
   const slots = profile.availability || [];
   const now = new Date();
   const nextWeek = new Date();
   nextWeek.setDate(now.getDate() + 7);
 
-  const activeSlots = slots.filter(s => !s.isBooked && new Date(s.startTime) >= now && new Date(s.startTime) <= nextWeek).length;
+  const activeSlots = slots.filter(s => {
+    if (s.isBooked) return false;
+    const start = s.startTime instanceof Date ? s.startTime : (s.startTime?.toDate ? s.startTime.toDate() : new Date(s.startTime));
+    return start >= now && start <= nextWeek;
+  }).length;
 
   if (activeSlots >= 6) {
     score += 20;
@@ -77,8 +132,10 @@ export function calculateProfileScore(profile: FullProfile): number {
   }
 
   // 5. Doctor Engagement / Activity (Max: 10 points)
-  const lastActiveTime = new Date(profile.lastActive).getTime();
-  const timeDiffHours = (now.getTime() - lastActiveTime) / (1000 * 60 * 60);
+  const activeDate = profile.lastActive 
+    ? (profile.lastActive instanceof Date ? profile.lastActive : (profile.lastActive?.toDate ? profile.lastActive.toDate() : new Date(profile.lastActive)))
+    : new Date();
+  const timeDiffHours = (now.getTime() - activeDate.getTime()) / (1000 * 60 * 60);
 
   if (timeDiffHours <= 24) {
     score += 10; // Login in last 24h
@@ -124,7 +181,7 @@ export function getOptimizationSuggestions(profile: FullProfile): OptimizationSu
   suggestions.push({
     text: "Configure sliding scale financial options to capture budget-sensitive searches.",
     points: 5,
-    completed: profile.slidingScale,
+    completed: !!profile.slidingScale,
     category: "practice",
   });
 
@@ -133,7 +190,11 @@ export function getOptimizationSuggestions(profile: FullProfile): OptimizationSu
   const now = new Date();
   const nextWeek = new Date();
   nextWeek.setDate(now.getDate() + 7);
-  const activeSlots = slots.filter(s => !s.isBooked && new Date(s.startTime) >= now && new Date(s.startTime) <= nextWeek).length;
+  const activeSlots = slots.filter(s => {
+    if (s.isBooked) return false;
+    const start = s.startTime instanceof Date ? s.startTime : (s.startTime?.toDate ? s.startTime.toDate() : new Date(s.startTime));
+    return start >= now && start <= nextWeek;
+  }).length;
 
   suggestions.push({
     text: "Add at least 6 open slots in the next 7 days to maximize calendar matching.",
@@ -143,8 +204,10 @@ export function getOptimizationSuggestions(profile: FullProfile): OptimizationSu
   });
 
   // Regular logins
-  const lastActiveTime = new Date(profile.lastActive).getTime();
-  const timeDiffHours = (Date.now() - lastActiveTime) / (1000 * 60 * 60);
+  const activeDate = profile.lastActive 
+    ? (profile.lastActive instanceof Date ? profile.lastActive : (profile.lastActive?.toDate ? profile.lastActive.toDate() : new Date(profile.lastActive)))
+    : new Date();
+  const timeDiffHours = (Date.now() - activeDate.getTime()) / (1000 * 60 * 60);
   suggestions.push({
     text: "Log in regularly to show active standing in searches.",
     points: 10,

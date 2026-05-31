@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { auth as adminAuth, db as adminDb, storage as adminStorage } from "@/lib/firebaseAdmin";
 import * as crypto from "crypto";
-import * as fs from "fs";
-import * as path from "path";
+import * as geofire from "geofire-common";
 
-// Helper to save base64 video pitch into the public local filesystem
-export function saveBase64Video(base64Data: string): string | null {
+// Helper to save base64 video to Cloud Storage for Firebase (Stateless & Global)
+export async function saveBase64VideoToCloud(base64Data: string): Promise<string | null> {
   try {
     if (!base64Data || base64Data.trim() === "") return null;
 
@@ -13,32 +12,31 @@ export function saveBase64Video(base64Data: string): string | null {
     const matches = base64Data.match(/^data:(video\/[a-zA-Z0-9]+);base64,(.+)$/);
     let rawBase64 = base64Data;
     let extension = "webm";
+    let mimeType = "video/webm";
 
     if (matches && matches.length === 3) {
-      const mimeType = matches[1];
+      mimeType = matches[1];
       rawBase64 = matches[2];
       extension = mimeType.split("/")[1] || "webm";
     } else if (base64Data.includes("http://") || base64Data.includes("https://")) {
-      // Already a direct URL link, do not decode/offload
+      // Already a direct URL
       return base64Data;
     }
 
     const buffer = Buffer.from(rawBase64, "base64");
     const uuidFilename = `${crypto.randomBytes(16).toString("hex")}.${extension}`;
-    
-    // Resolve public uploads path
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "videos");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
 
-    const uploadPath = path.join(uploadDir, uuidFilename);
-    fs.writeFileSync(uploadPath, buffer);
+    const bucket = adminStorage.bucket();
+    const file = bucket.file(`videos/${uuidFilename}`);
     
-    // Return relative URL that Next.js serves statically
-    return `/uploads/videos/${uuidFilename}`;
+    await file.save(buffer, {
+      metadata: { contentType: mimeType },
+      public: true,
+    });
+    
+    return `https://storage.googleapis.com/${bucket.name}/${file.name}`;
   } catch (error) {
-    console.error("Failed to decode and save practitioner intro video:", error);
+    console.error("Failed to upload base64 video to Firebase storage:", error);
     return null;
   }
 }
@@ -113,79 +111,109 @@ export async function POST(request: Request) {
       introVideoUrl, websiteUrl, linkedinUrl, twitterUrl
     } = body;
 
-    // Check duplicate email
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
+
+    if (isMockMode) {
+      console.warn("⚠️ Firebase Admin credentials are not configured. Running doctor registration in offline mock mode.");
+      return NextResponse.json({
+        success: true,
+        data: {
+          user: { id: "mock-new-doc-id", email, name, role: "PSYCHIATRIST" },
+          profile: { id: "mock-new-doc-id", city, state, verificationStatus: "PENDING" }
+        }
+      });
+    }
+
+    // 1. Check duplicate email in Firebase Auth
+    try {
+      await adminAuth.getUserByEmail(email);
       return NextResponse.json(
         { success: false, error: "An account with this email already exists." },
         { status: 400 }
       );
+    } catch (err: any) {
+      // "auth/user-not-found" is what we want!
+      if (err.code !== "auth/user-not-found") {
+        throw err;
+      }
     }
 
-    // 1. Resolve geographic coordinates dynamically
+    // 2. Resolve geographic coordinates and geohash
     const { latitude, longitude } = resolveCoordinates(city, state);
+    const hashValue = geofire.geohashForLocation([latitude, longitude]);
 
-    // Hash Password
-    const passwordHash = crypto.createHash("sha256").update(password).digest("hex");
-
-    // Process and optimize base64 video upload offloading
+    // 3. Process webcam intro video pitch
     let resolvedVideoUrl = null;
     if (introVideoUrl) {
-      resolvedVideoUrl = saveBase64Video(introVideoUrl);
+      resolvedVideoUrl = await saveBase64VideoToCloud(introVideoUrl);
     }
 
-    // Database transactional creation
-    const result = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          email,
-          name,
-          passwordHash,
-          role: "PSYCHIATRIST",
-        },
-      });
-
-      const profile = await tx.psychiatristProfile.create({
-        data: {
-          userId: user.id,
-          licenseType,
-          licenseState,
-          licenseNumber,
-          npiNumber,
-          isVerified: false,
-          verificationStatus: "PENDING",
-          clinicName,
-          address,
-          city,
-          state,
-          zipCode,
-          latitude,
-          longitude,
-          specialties: JSON.stringify(specialties || []),
-          treatmentModalities: JSON.stringify(treatmentModalities || []),
-          targetDemographics: JSON.stringify(targetDemographics || []),
-          languages: JSON.stringify(languages || []),
-          bioPreview: bioPreview || "",
-          bioFull: bioFull || "",
-          headshotUrl: headshotUrl || "https://images.unsplash.com/photo-1594824813573-246434de83fb?q=80&w=250&auto=format&fit=crop",
-          sessionFormat: sessionFormat || "TELEHEALTH",
-          sessionFee: parseFloat(sessionFee || "2000"),
-          slidingScale: !!slidingScale,
-          acceptedInsurances: JSON.stringify(["Cash Pay", "Private Insurance"]),
-          searchScore: 50,
-          introVideoUrl: resolvedVideoUrl,
-          websiteUrl: websiteUrl || null,
-          linkedinUrl: linkedinUrl || null,
-          twitterUrl: twitterUrl || null,
-        },
-      });
-
-      return { user, profile };
+    // 4. Create User in Firebase Authentication
+    const authUser = await adminAuth.createUser({
+      email,
+      password,
+      displayName: name,
     });
+    const uid = authUser.uid;
+
+    // Set custom role claim for authorization
+    await adminAuth.setCustomUserClaims(uid, { role: "PSYCHIATRIST" });
+
+    // 5. Database writes inside Firestore collections
+    // Write user profile metadata
+    await adminDb.collection("users").doc(uid).set({
+      email,
+      name,
+      role: "PSYCHIATRIST",
+      createdAt: new Date(),
+    });
+
+    // Write clinical psychiatric parameters
+    const profileData = {
+      id: uid,
+      userId: uid,
+      licenseType,
+      licenseState,
+      licenseNumber,
+      npiNumber,
+      isVerified: false,
+      verificationStatus: "PENDING",
+      clinicName,
+      address,
+      city,
+      state,
+      zipCode,
+      latitude,
+      longitude,
+      geohash: hashValue,
+      specialties: JSON.stringify(specialties || []),
+      treatmentModalities: JSON.stringify(treatmentModalities || []),
+      targetDemographics: JSON.stringify(targetDemographics || []),
+      languages: JSON.stringify(languages || []),
+      bioPreview: bioPreview || "",
+      bioFull: bioFull || "",
+      headshotUrl: headshotUrl || "https://images.unsplash.com/photo-1594824813573-246434de83fb?q=80&w=250&auto=format&fit=crop",
+      sessionFormat: sessionFormat || "TELEHEALTH",
+      sessionFee: parseFloat(sessionFee || "2000"),
+      slidingScale: !!slidingScale,
+      acceptedInsurances: JSON.stringify(["Cash Pay", "Private Insurance"]),
+      searchScore: 50,
+      introVideoUrl: resolvedVideoUrl,
+      websiteUrl: websiteUrl || null,
+      linkedinUrl: linkedinUrl || null,
+      twitterUrl: twitterUrl || null,
+      isSuspended: false,
+      createdAt: new Date(),
+    };
+
+    await adminDb.collection("psychiatrists").doc(uid).set(profileData);
 
     return NextResponse.json({
       success: true,
-      data: result,
+      data: {
+        user: { id: uid, email, name, role: "PSYCHIATRIST" },
+        profile: profileData,
+      },
     });
   } catch (error: any) {
     console.error("🚨 Doctor Register API Error:", error);
