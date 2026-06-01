@@ -4,13 +4,13 @@ export interface Review {
   rating: number;
   comment: string;
   isApproved: boolean;
-  createdAt: any;
+  createdAt: unknown;
 }
 
 export interface AvailabilitySlot {
   id: string;
-  startTime: any;
-  endTime: any;
+  startTime: unknown;
+  endTime: unknown;
   isBooked: boolean;
 }
 
@@ -48,9 +48,9 @@ export interface PsychiatristProfile {
   acceptedInsurances: string;
   searchScore: number;
   isSponsored: boolean;
-  lastActive: any;
+  lastActive: unknown;
   isSuspended: boolean;
-  createdAt: any;
+  createdAt: unknown;
 }
 
 export interface FullProfile extends Partial<PsychiatristProfile> {

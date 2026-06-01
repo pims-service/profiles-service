@@ -87,7 +87,7 @@ export async function GET(
     const userData = userSnap.data();
 
     // Fetch reviews
-    const reviews: any[] = reviewsSnap.docs.map(r => {
+    const reviews: Record<string, unknown>[] = reviewsSnap.docs.map(r => {
       const rData = r.data();
       return {
         ...rData,
@@ -97,7 +97,7 @@ export async function GET(
     reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Fetch availability
-    const availability: any[] = availabilitySnap.docs.map(a => {
+    const availability: Record<string, unknown>[] = availabilitySnap.docs.map(a => {
       const aData = a.data();
       return {
         ...aData,
@@ -108,7 +108,7 @@ export async function GET(
     availability.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
     // Fetch bookings
-    const bookings: any[] = bookingsSnap.docs.map(b => {
+    const bookings: Record<string, unknown>[] = bookingsSnap.docs.map(b => {
       const bData = b.data();
       // Find matching slot for slot startTime preview
       const matchingSlot = availability.find(s => s.id === bData.slotId);
@@ -135,7 +135,7 @@ export async function GET(
       success: true,
       data: combinedProfile,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Doctor Detail API Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to load doctor profile." },

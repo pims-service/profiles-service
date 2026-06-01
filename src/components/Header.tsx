@@ -7,12 +7,14 @@ import { useRouter, usePathname } from "next/navigation";
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [session, setSession] = useState<any>(null);
 
   useEffect(() => {
     const sessRaw = localStorage.getItem("doctor_session");
     if (sessRaw) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSession(JSON.parse(sessRaw));
       } catch {
         localStorage.removeItem("doctor_session");

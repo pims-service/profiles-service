@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       success: true,
       booking: bookingData,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Booking API Error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error during booking transaction." },

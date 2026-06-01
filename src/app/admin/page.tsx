@@ -86,7 +86,9 @@ export default function AdminConsole() {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchModerationData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleApprove = async (docId: string) => {
@@ -292,7 +294,7 @@ export default function AdminConsole() {
 
                       <div className="mt-4">
                         <p className="text-xs text-slate-600 italic bg-slate-50 border border-slate-100 p-3 rounded-lg leading-relaxed">
-                          "{doc.bioPreview}"
+                          &quot;{doc.bioPreview}&quot;
                         </p>
                       </div>
                     </div>

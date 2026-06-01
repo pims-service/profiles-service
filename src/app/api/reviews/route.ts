@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       success: true,
       review: reviewData,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Review API Error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error during review operation." },

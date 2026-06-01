@@ -23,6 +23,7 @@ export async function GET(request: Request) {
 
     const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let psychiatrists: any[] = [];
     let originCoords: { lat: number; lng: number } | null = null;
     let resolvedName = "";
@@ -139,6 +140,7 @@ export async function GET(request: Request) {
         }
 
         const snapshots = await Promise.all(promises);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const docsMap = new Map<string, any>(); // Prevent duplicate matches in overlapping geohash bounds
 
         for (const snap of snapshots) {
@@ -228,7 +230,7 @@ export async function GET(request: Request) {
 
       const reviews = doc.reviews || [];
       const avgRating = reviews.length > 0 
-        ? reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / reviews.length 
+        ? reviews.reduce((sum: number, r: { rating?: number }) => sum + (r.rating || 0), 0) / reviews.length 
         : 0;
 
       let specialtiesList: string[] = [];
@@ -305,7 +307,7 @@ export async function GET(request: Request) {
       resultsCount: results.length,
       data: results,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Search API Proximity Query Error:", error);
     return NextResponse.json(
       { success: false, error: "Search execution error." },

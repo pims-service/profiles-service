@@ -69,6 +69,7 @@ export default function SearchDirectory() {
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -129,7 +130,9 @@ export default function SearchDirectory() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchResults();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location, lat, lng, distance, specialty, insurance, format, maxFee, sort, limit]);
 
   // Handle appointment booking
@@ -302,7 +305,7 @@ export default function SearchDirectory() {
             <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm">
               <h3 className="text-lg font-bold text-slate-900 mb-2">No verified providers found</h3>
               <p className="text-slate-500 text-xs max-w-sm mx-auto mb-6 leading-relaxed">
-                There are no active clinic matches listed within this radius. Try selecting "Detect Location" or search "New York" to load live demo data.
+                There are no active clinic matches listed within this radius. Try selecting &quot;Detect Location&quot; or search &quot;New York&quot; to load live demo data.
               </p>
               <button 
                 onClick={() => { setLocation("New York"); setSpecialty(""); }}

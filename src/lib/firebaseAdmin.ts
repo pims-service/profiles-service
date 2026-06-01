@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import * as crypto from "crypto";
+
 
 if (!admin.apps.length) {
   let privateKey = process.env.FIREBASE_PRIVATE_KEY

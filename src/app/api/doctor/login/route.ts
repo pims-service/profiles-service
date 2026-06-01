@@ -107,7 +107,7 @@ export async function POST(request: Request) {
         idToken: data.idToken,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Doctor Login API Error:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error during login operation." },

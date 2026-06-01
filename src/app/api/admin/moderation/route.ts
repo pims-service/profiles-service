@@ -68,6 +68,7 @@ export async function GET() {
     const usersSnap = await db.collection("users").get();
     const usersMap = new Map(usersSnap.docs.map(doc => [doc.id, doc.data()]));
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profiles: any[] = [];
     for (const doc of psychiatristsSnap.docs) {
       const data = doc.data();
@@ -107,7 +108,7 @@ export async function GET() {
       stats,
       data: profiles,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Admin Moderation API Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to load directory moderation list." },
@@ -170,6 +171,7 @@ export async function PUT(request: Request) {
     }
 
     const currentProfile = docSnap.data()!;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let updatedData: any = {};
 
     if (action === "APPROVE") {
@@ -244,7 +246,7 @@ export async function PUT(request: Request) {
       success: true,
       data: finalizedProfile,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Admin Action Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to execute moderation action." },

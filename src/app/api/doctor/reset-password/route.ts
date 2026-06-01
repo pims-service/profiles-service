@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       success: true,
       message: "If an account exists, a password reset link has been sent.",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Doctor Password Reset API Error:", error);
     // Generic error to prevent leaking info
     return NextResponse.json(

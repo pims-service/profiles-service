@@ -104,6 +104,7 @@ export async function PUT(request: Request) {
     }
 
     // Perform updates
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatedData: any = {
       clinicName: clinicName || profile.clinicName,
       address: address || profile.address,
@@ -179,7 +180,7 @@ export async function PUT(request: Request) {
       success: true,
       data: finalizedProfile,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Doctor Profile Update Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update psychiatrist profile details." },

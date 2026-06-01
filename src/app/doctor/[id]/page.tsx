@@ -76,6 +76,7 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -97,7 +98,9 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDoctor();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -314,7 +317,7 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
           <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
             <h3 className="font-display font-bold text-base text-slate-900 mb-4 border-b border-slate-100 pb-2">About Clinical Practice</h3>
             <p className="text-sm font-medium text-slate-800 border-l-2 border-emerald-500 pl-4 py-1 italic mb-4 leading-relaxed">
-              "{doc.bioPreview}"
+              &quot;{doc.bioPreview}&quot;
             </p>
             <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line">
               {doc.bioFull}
@@ -434,7 +437,7 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
                       <strong className="text-xs text-slate-800 font-bold">{rev.patientName}</strong>
                       <span className="text-amber-400 text-xs">{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</span>
                     </div>
-                    <p className="text-slate-500 text-xs">"{rev.comment}"</p>
+                    <p className="text-slate-500 text-xs">&quot;{rev.comment}&quot;</p>
                     <div className="text-[10px] text-slate-400 mt-2">
                       Posted on {mounted ? new Date(rev.createdAt).toLocaleDateString() : new Date(rev.createdAt).toISOString().split('T')[0]} &bull; Verified Appointment
                     </div>

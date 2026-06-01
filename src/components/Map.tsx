@@ -19,7 +19,7 @@ interface MapProps {
   hoveredDocId: string | null;
   centerLat: number | null;
   centerLng: number | null;
-  onBookDoc: (doc: any) => void;
+  onBookDoc: (doc: Doctor) => void;
   onHoverDoc: (docId: string | null) => void;
 }
 
@@ -69,7 +69,7 @@ export default function Map({
     // Set initial center coordinates: use center coords, first doctor, or Islamabad PK
     let initialLat = 33.6844;
     let initialLng = 73.0479;
-    let initialZoom = 12;
+    const initialZoom = 12;
 
     if (centerLat && centerLng) {
       initialLat = centerLat;
@@ -119,6 +119,7 @@ export default function Map({
       }
       mapContainerRef.current?.removeEventListener("click", handlePopupClick);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 2. Re-center map when search location coordinates change
@@ -132,6 +133,7 @@ export default function Map({
       // Find average or first doctor coordinates to center
       map.flyTo([doctors[0].latitude, doctors[0].longitude], 12, { duration: 1.5 });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centerLat, centerLng, doctors.length === 0]);
 
   // 3. Clear and Plot Doctor Markers
@@ -191,7 +193,8 @@ export default function Map({
 
       markersRef.current[doc.id] = { marker, doctor: doc };
     });
-  }, [doctors, mapInstanceRef.current]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doctors]);
 
   // 4. Update Icons dynamically when list hover changes
   useEffect(() => {

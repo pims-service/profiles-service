@@ -407,8 +407,8 @@ async function main() {
     });
     adminUid = adminUser.uid;
     await auth.setCustomUserClaims(adminUid, { role: "ADMIN" });
-  } catch (error: any) {
-    if (error.code === "auth/email-already-exists") {
+  } catch (error: unknown) {
+    if ((error as { code?: string }).code === "auth/email-already-exists") {
       const existingUser = await auth.getUserByEmail(adminEmail);
       adminUid = existingUser.uid;
       await auth.setCustomUserClaims(adminUid, { role: "ADMIN" });
@@ -436,8 +436,8 @@ async function main() {
     });
     patientUid = patientUser.uid;
     await auth.setCustomUserClaims(patientUid, { role: "PATIENT" });
-  } catch (error: any) {
-    if (error.code === "auth/email-already-exists") {
+  } catch (error: unknown) {
+    if ((error as { code?: string }).code === "auth/email-already-exists") {
       const existingUser = await auth.getUserByEmail(patientEmail);
       patientUid = existingUser.uid;
       await auth.setCustomUserClaims(patientUid, { role: "PATIENT" });
@@ -468,8 +468,8 @@ async function main() {
       });
       userUid = authUser.uid;
       await auth.setCustomUserClaims(userUid, { role: "PSYCHIATRIST" });
-    } catch (error: any) {
-      if (error.code === "auth/email-already-exists") {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === "auth/email-already-exists") {
         const existingUser = await auth.getUserByEmail(doc.email);
         userUid = existingUser.uid;
         await auth.setCustomUserClaims(userUid, { role: "PSYCHIATRIST" });

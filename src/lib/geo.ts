@@ -36,7 +36,7 @@ const geoRegistry: Record<string, GeoLocation> = {
 
 // Map of lowercased city names to coordinates
 const cityRegistry: Record<string, GeoLocation> = {};
-Object.entries(geoRegistry).forEach(([zip, loc]) => {
+Object.values(geoRegistry).forEach((loc) => {
   cityRegistry[loc.city.toLowerCase()] = loc;
 });
 

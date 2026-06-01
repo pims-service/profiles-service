@@ -73,7 +73,7 @@ export async function POST(request: Request) {
         endTime: end.toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Create Slot Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create availability slot." },
@@ -150,7 +150,7 @@ export async function DELETE(request: Request) {
       success: true,
       message: "Availability slot deleted successfully.",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Delete Slot Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to delete slot." },

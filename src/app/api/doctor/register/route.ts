@@ -157,7 +157,7 @@ export async function POST(request: Request) {
         { success: false, error: "An account with this email already exists." },
         { status: 400 }
       );
-    } catch (err: any) {
+    } catch (err) {
       // "auth/user-not-found" is what we want!
       if (err.code !== "auth/user-not-found") {
         throw err;
@@ -266,7 +266,7 @@ export async function POST(request: Request) {
         profile: profileData,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("🚨 Doctor Register API Error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create psychiatrist registration." },

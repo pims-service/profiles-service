@@ -196,7 +196,7 @@ export default function DoctorLogin() {
         )}
 
         <div style={{ textTransform: "none", fontSize: "0.85rem", color: "var(--text-muted)", textAlign: "center", marginTop: "20px" }}>
-          Don't have a listing? <Link href="/doctor/register" style={{ color: "var(--primary)", fontWeight: 700 }}>Join the Directory</Link>
+          Don&apos;t have a listing? <Link href="/doctor/register" style={{ color: "var(--primary)", fontWeight: 700 }}>Join the Directory</Link>
         </div>
 
         {/* Rapid testing console */}

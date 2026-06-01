@@ -23,7 +23,7 @@ async function main() {
   const defaultPasswordHash = hashPassword("Password123!");
 
   // 1. Create Admins
-  const adminUser = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: "admin@pims.com",
       name: "Dr. Sarah Jenkins (Admin)",
@@ -34,7 +34,7 @@ async function main() {
   console.log("👤 Created Admin User: admin@pims.com");
 
   // 2. Create Patient for demo reviews/bookings
-  const patientUser = await prisma.user.create({
+  await prisma.user.create({
     data: {
       email: "patient@demo.com",
       name: "John Doe",
