@@ -150,16 +150,27 @@ export async function GET(request: Request) {
           }
         }
 
-        for (const profile of docsMap.values()) {
-          const distance = calculateDistance(originCoords.lat, originCoords.lng, profile.latitude, profile.longitude);
-          if (distance <= distanceLimit) {
+        const filteredProfiles = Array.from(docsMap.values()).filter(profile => {
+          const distance = calculateDistance(originCoords!.lat, originCoords!.lng, profile.latitude, profile.longitude);
+          return distance <= distanceLimit;
+        });
+
+        // Fetch subcollections concurrently for all location matches in parallel
+        // to fully resolve N+1 sequential request latency.
+        psychiatrists = await Promise.all(
+          filteredProfiles.map(async (profile) => {
+            const distance = calculateDistance(originCoords!.lat, originCoords!.lng, profile.latitude, profile.longitude);
             const userData = usersMap.get(profile.userId);
-            const reviewsSnap = await db.collection("psychiatrists").doc(profile.id).collection("reviews").get();
+
+            const [reviewsSnap, availabilitySnap] = await Promise.all([
+              db.collection("psychiatrists").doc(profile.id).collection("reviews").get(),
+              db.collection("psychiatrists").doc(profile.id).collection("availability").get()
+            ]);
+
             const reviews = reviewsSnap.docs.map(r => r.data());
-            const availabilitySnap = await db.collection("psychiatrists").doc(profile.id).collection("availability").get();
             const availability = availabilitySnap.docs.map(a => a.data());
 
-            psychiatrists.push({
+            return {
               ...profile,
               user: {
                 name: userData?.name || "Clinical Provider",
@@ -167,9 +178,10 @@ export async function GET(request: Request) {
               },
               reviews,
               availability,
-            });
-          }
-        }
+              computedDistance: distance
+            };
+          })
+        );
       } else {
         // No location query, fetch all verified active psychiatrists
         const snapshot = await db.collection("psychiatrists")
@@ -177,24 +189,31 @@ export async function GET(request: Request) {
           .where("isSuspended", "==", false)
           .get();
 
-        for (const doc of snapshot.docs) {
-          const profile = doc.data();
-          const userData = usersMap.get(profile.userId);
-          const reviewsSnap = await db.collection("psychiatrists").doc(doc.id).collection("reviews").get();
-          const reviews = reviewsSnap.docs.map(r => r.data());
-          const availabilitySnap = await db.collection("psychiatrists").doc(doc.id).collection("availability").get();
-          const availability = availabilitySnap.docs.map(a => a.data());
+        // Concurrently load subcollections for all loaded providers
+        psychiatrists = await Promise.all(
+          snapshot.docs.map(async (doc) => {
+            const profile = doc.data();
+            const userData = usersMap.get(profile.userId);
 
-          psychiatrists.push({
-            ...profile,
-            user: {
-              name: userData?.name || "Clinical Provider",
-              email: userData?.email || "",
-            },
-            reviews,
-            availability,
-          });
-        }
+            const [reviewsSnap, availabilitySnap] = await Promise.all([
+              db.collection("psychiatrists").doc(doc.id).collection("reviews").get(),
+              db.collection("psychiatrists").doc(doc.id).collection("availability").get()
+            ]);
+
+            const reviews = reviewsSnap.docs.map(r => r.data());
+            const availability = availabilitySnap.docs.map(a => a.data());
+
+            return {
+              ...profile,
+              user: {
+                name: userData?.name || "Clinical Provider",
+                email: userData?.email || "",
+              },
+              reviews,
+              availability,
+            };
+          })
+        );
       }
     }
 

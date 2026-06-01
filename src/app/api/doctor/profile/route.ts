@@ -1,14 +1,20 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebaseAdmin";
+import { db, auth } from "@/lib/firebaseAdmin";
 import { calculateProfileScore } from "@/lib/ranking";
+import { resolveCoordinates } from "@/app/api/doctor/register/route";
+import * as geofire from "geofire-common";
 
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
     const {
       profileId,
+      name,
+      licenseType, licenseState, licenseNumber, npiNumber,
       clinicName, address, city, state, zipCode,
-      sessionFormat, sessionFee, slidingScale, introVideoUrl, bioFull
+      sessionFormat, sessionFee, slidingScale, introVideoUrl, bioFull,
+      bioPreview, headshotUrl, websiteUrl, linkedinUrl, twitterUrl,
+      specialties, treatmentModalities, targetDemographics, languages
     } = body;
 
     if (!profileId) {
@@ -37,6 +43,20 @@ export async function PUT(request: Request) {
           introVideoUrl: introVideoUrl || null,
           bioFull: bioFull || "",
           searchScore: 95,
+          licenseType: licenseType || "MD",
+          licenseState: licenseState || "NY",
+          licenseNumber: licenseNumber || "NY-MD-884920",
+          npiNumber: npiNumber || "1928374650",
+          bioPreview: bioPreview || "Dr. Marcus Keller is a board-certified psychiatrist...",
+          headshotUrl: headshotUrl || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=250&auto=format&fit=crop",
+          websiteUrl: websiteUrl || null,
+          linkedinUrl: linkedinUrl || null,
+          twitterUrl: twitterUrl || null,
+          specialties: Array.isArray(specialties) ? JSON.stringify(specialties) : (specialties || "[]"),
+          treatmentModalities: Array.isArray(treatmentModalities) ? JSON.stringify(treatmentModalities) : (treatmentModalities || "[]"),
+          targetDemographics: Array.isArray(targetDemographics) ? JSON.stringify(targetDemographics) : (targetDemographics || "[]"),
+          languages: Array.isArray(languages) ? JSON.stringify(languages) : (languages || "[]"),
+          user: { name: name || "Dr. Marcus Keller", email: "dr.keller@pims.com" }
         }
       });
     }
@@ -53,8 +73,20 @@ export async function PUT(request: Request) {
 
     const profile = docSnap.data()!;
 
+    // Perform User Display Name updates
+    if (name) {
+      try {
+        await Promise.all([
+          db.collection("users").doc(profile.userId).update({ name }),
+          auth.updateUser(profile.userId, { displayName: name })
+        ]);
+      } catch (authError) {
+        console.error("Auth User profile name updates failed:", authError);
+      }
+    }
+
     // Perform updates
-    const updatedData = {
+    const updatedData: any = {
       clinicName: clinicName || profile.clinicName,
       address: address || profile.address,
       city: city || profile.city,
@@ -65,20 +97,46 @@ export async function PUT(request: Request) {
       slidingScale: slidingScale !== undefined ? !!slidingScale : profile.slidingScale,
       introVideoUrl: introVideoUrl !== undefined ? introVideoUrl : (profile.introVideoUrl || null),
       bioFull: bioFull || profile.bioFull,
-      lastActive: new Date(), // Set active timestamp
+      lastActive: new Date(),
+
+      licenseType: licenseType || profile.licenseType,
+      licenseState: licenseState || profile.licenseState,
+      licenseNumber: licenseNumber || profile.licenseNumber,
+      npiNumber: npiNumber || profile.npiNumber,
+      bioPreview: bioPreview !== undefined ? bioPreview : profile.bioPreview,
+      headshotUrl: headshotUrl || profile.headshotUrl,
+      websiteUrl: websiteUrl !== undefined ? websiteUrl : profile.websiteUrl,
+      linkedinUrl: linkedinUrl !== undefined ? linkedinUrl : profile.linkedinUrl,
+      twitterUrl: twitterUrl !== undefined ? twitterUrl : profile.twitterUrl,
+      specialties: specialties ? (Array.isArray(specialties) ? JSON.stringify(specialties) : specialties) : profile.specialties,
+      treatmentModalities: treatmentModalities ? (Array.isArray(treatmentModalities) ? JSON.stringify(treatmentModalities) : treatmentModalities) : profile.treatmentModalities,
+      targetDemographics: targetDemographics ? (Array.isArray(targetDemographics) ? JSON.stringify(targetDemographics) : targetDemographics) : profile.targetDemographics,
+      languages: languages ? (Array.isArray(languages) ? JSON.stringify(languages) : languages) : profile.languages,
     };
+
+    // Geospatial Coordinates & Geohash recalculation
+    if (city !== profile.city || state !== profile.state) {
+      const { latitude, longitude } = resolveCoordinates(city || profile.city, state || profile.state);
+      updatedData.latitude = latitude;
+      updatedData.longitude = longitude;
+      updatedData.geohash = geofire.geohashForLocation([latitude, longitude]);
+    }
 
     await docRef.update(updatedData);
 
-    // Fetch refreshed complete state for score recalculation
-    const refreshedSnap = await docRef.get();
+    // Fetch refreshed complete state, reviews, availability, and users metadata in parallel
+    // to recalculate score and return finalized info in a single network round-trip.
+    const [refreshedSnap, reviewsSnap, availabilitySnap, userSnap] = await Promise.all([
+      docRef.get(),
+      docRef.collection("reviews").get(),
+      docRef.collection("availability").get(),
+      db.collection("users").doc(profile.userId).get()
+    ]);
+
     const refreshedProfile = refreshedSnap.data()!;
-
-    const reviewsSnap = await docRef.collection("reviews").get();
-    const availabilitySnap = await docRef.collection("availability").get();
-
     const reviews = reviewsSnap.docs.map(r => r.data());
     const availability = availabilitySnap.docs.map(a => a.data());
+    const userData = userSnap.data();
 
     // Calculate score
     const updatedScore = calculateProfileScore({
@@ -93,6 +151,10 @@ export async function PUT(request: Request) {
     const finalizedProfile = {
       ...refreshedProfile,
       searchScore: updatedScore,
+      user: {
+        name: userData?.name || name || "Clinical Provider",
+        email: userData?.email || "",
+      }
     };
 
     return NextResponse.json({

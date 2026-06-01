@@ -74,11 +74,19 @@ export async function GET(
     }
 
     const profileData = docSnap.data()!;
-    const userSnap = await db.collection("users").doc(profileData.userId).get();
+
+    // Concurrently fetch all doctor profile subcollections and related metadata
+    // to significantly cut down request latency and eliminate event loop block.
+    const [userSnap, reviewsSnap, availabilitySnap, bookingsSnap] = await Promise.all([
+      db.collection("users").doc(profileData.userId).get(),
+      docRef.collection("reviews").get(),
+      docRef.collection("availability").get(),
+      docRef.collection("bookings").get(),
+    ]);
+
     const userData = userSnap.data();
 
     // Fetch reviews
-    const reviewsSnap = await docRef.collection("reviews").get();
     const reviews: any[] = reviewsSnap.docs.map(r => {
       const rData = r.data();
       return {
@@ -89,7 +97,6 @@ export async function GET(
     reviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Fetch availability
-    const availabilitySnap = await docRef.collection("availability").get();
     const availability: any[] = availabilitySnap.docs.map(a => {
       const aData = a.data();
       return {
@@ -101,7 +108,6 @@ export async function GET(
     availability.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
     // Fetch bookings
-    const bookingsSnap = await docRef.collection("bookings").get();
     const bookings: any[] = bookingsSnap.docs.map(b => {
       const bData = b.data();
       // Find matching slot for slot startTime preview

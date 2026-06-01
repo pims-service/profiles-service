@@ -64,6 +64,7 @@ export default function DoctorPortal() {
   }, []);
 
   // Settings Form values
+  const [name, setName] = useState("");
   const [clinicName, setClinicName] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -74,6 +75,22 @@ export default function DoctorPortal() {
   const [slidingScale, setSlidingScale] = useState(false);
   const [introVideoUrl, setIntroVideoUrl] = useState("");
   const [bioFull, setBioFull] = useState("");
+  const [bioPreview, setBioPreview] = useState("");
+  const [headshotUrl, setHeadshotUrl] = useState("");
+  const [licenseType, setLicenseType] = useState("MD");
+  const [licenseState, setLicenseState] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [npiNumber, setNpiNumber] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [twitterUrl, setTwitterUrl] = useState("");
+  
+  // List fields in comma-separated string format
+  const [specialtiesText, setSpecialtiesText] = useState("");
+  const [treatmentModalitiesText, setTreatmentModalitiesText] = useState("");
+  const [targetDemographicsText, setTargetDemographicsText] = useState("");
+  const [languagesText, setLanguagesText] = useState("");
+
   const [settingsStatus, setSettingsStatus] = useState<"IDLE" | "PENDING" | "SUCCESS">("IDLE");
 
   // New Availability Slot Input
@@ -114,6 +131,33 @@ export default function DoctorPortal() {
         setSlidingScale(data.data.slidingScale);
         setIntroVideoUrl(data.data.introVideoUrl || "");
         setBioFull(data.data.bioFull || "");
+        
+        setName(data.data.user?.name || data.data.name || "");
+        setBioPreview(data.data.bioPreview || "");
+        setHeadshotUrl(data.data.headshotUrl || "");
+        setLicenseType(data.data.licenseType || "MD");
+        setLicenseState(data.data.licenseState || "");
+        setLicenseNumber(data.data.licenseNumber || "");
+        setNpiNumber(data.data.npiNumber || "");
+        setWebsiteUrl(data.data.websiteUrl || "");
+        setLinkedinUrl(data.data.linkedinUrl || "");
+        setTwitterUrl(data.data.twitterUrl || "");
+
+        const parseListToText = (val: any) => {
+          if (!val) return "";
+          if (Array.isArray(val)) return val.join(", ");
+          try {
+            const parsed = JSON.parse(val);
+            return Array.isArray(parsed) ? parsed.join(", ") : "";
+          } catch {
+            return "";
+          }
+        };
+
+        setSpecialtiesText(parseListToText(data.data.specialties));
+        setTreatmentModalitiesText(parseListToText(data.data.treatmentModalities));
+        setTargetDemographicsText(parseListToText(data.data.targetDemographics));
+        setLanguagesText(parseListToText(data.data.languages));
       }
     } catch (err) {
       console.error("Failed to retrieve profile data:", err);
@@ -200,14 +244,37 @@ export default function DoctorPortal() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           profileId: doc.id,
+          name,
           clinicName, address, city, state, zipCode,
-          sessionFormat, sessionFee, slidingScale, introVideoUrl, bioFull
+          sessionFormat, sessionFee, slidingScale, introVideoUrl, bioFull,
+          bioPreview, headshotUrl, licenseType, licenseState, licenseNumber, npiNumber,
+          websiteUrl, linkedinUrl, twitterUrl,
+          specialties: specialtiesText.split(",").map(s => s.trim()).filter(Boolean),
+          treatmentModalities: treatmentModalitiesText.split(",").map(t => t.trim()).filter(Boolean),
+          targetDemographics: targetDemographicsText.split(",").map(d => d.trim()).filter(Boolean),
+          languages: languagesText.split(",").map(l => l.trim()).filter(Boolean),
         }),
       });
       const data = await res.json();
       if (data.success) {
         setSettingsStatus("SUCCESS");
-        setDoc(data.data);
+        setDoc(prev => prev ? {
+          ...prev,
+          ...data.data,
+          availability: prev.availability,
+          bookings: prev.bookings,
+          reviews: prev.reviews,
+        } : data.data);
+        
+        // Refresh local session name
+        const raw = localStorage.getItem("doctor_session");
+        if (raw) {
+          const sess = JSON.parse(raw);
+          sess.name = name;
+          localStorage.setItem("doctor_session", JSON.stringify(sess));
+          setSession(sess);
+        }
+
         setTimeout(() => setSettingsStatus("IDLE"), 2000);
       }
     } catch {
@@ -228,7 +295,7 @@ export default function DoctorPortal() {
   const now = new Date();
   const nextWeek = new Date();
   nextWeek.setDate(now.getDate() + 7);
-  const activeSlots = doc.availability.filter(s => !s.isBooked && new Date(s.startTime) >= now && new Date(s.startTime) <= nextWeek).length;
+  const activeSlots = (doc.availability || []).filter(s => !s.isBooked && new Date(s.startTime) >= now && new Date(s.startTime) <= nextWeek).length;
 
   return (
     <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8">
@@ -414,61 +481,171 @@ export default function DoctorPortal() {
                     ✓ Profile Details Updated and Search Score Standing Recalculated!
                   </div>
                 )}
-                <form onSubmit={handleSettingsSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <form onSubmit={handleSettingsSubmit} className="flex flex-col gap-8">
+                  
+                  {/* 1. Core Profile Details */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Clinic Name</label>
-                    <input type="text" value={clinicName} onChange={(e) => setClinicName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Office Address</label>
-                    <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-bold text-slate-700 mb-1.5">City</label>
-                      <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-700 mb-1.5">ZIP</label>
-                      <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-4 border-b border-emerald-50 pb-1">1. Core Profile Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Full Name</label>
+                        <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Headshot Photo URL</label>
+                        <input type="text" required value={headshotUrl} onChange={(e) => setHeadshotUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
                     </div>
                   </div>
 
+                  {/* 2. License & Credentials */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Intro Consult Video URL</label>
-                    <input type="text" value={introVideoUrl} onChange={(e) => setIntroVideoUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-4 border-b border-emerald-50 pb-1">2. License & Credentials</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">License Type</label>
+                        <select value={licenseType} onChange={(e) => setLicenseType(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none cursor-pointer">
+                          <option value="MD">MD</option>
+                          <option value="DO">DO</option>
+                          <option value="PhD">PhD</option>
+                          <option value="LCSW">LCSW</option>
+                          <option value="LMFT">LMFT</option>
+                          <option value="LPC">LPC</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">License State</label>
+                        <input type="text" required value={licenseState} onChange={(e) => setLicenseState(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">License Number</label>
+                        <input type="text" required value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">NPI Number</label>
+                        <input type="text" required value={npiNumber} onChange={(e) => setNpiNumber(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                    </div>
                   </div>
 
+                  {/* 3. Clinic Location & Geospatial details */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Format</label>
-                    <select value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none cursor-pointer">
-                      <option value="TELEHEALTH">Telehealth Only</option>
-                      <option value="IN_PERSON">In-Person Clinic</option>
-                      <option value="HYBRID">Hybrid Office & Remote</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 items-center">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Fee ($)</label>
-                      <input type="number" value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-4 border-b border-emerald-50 pb-1">3. Clinic & Location Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Clinic Name</label>
+                        <input type="text" required value={clinicName} onChange={(e) => setClinicName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Office Address</label>
+                        <input type="text" required value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 sm:col-span-2">
+                        <div className="col-span-2">
+                          <label className="block text-[10px] font-bold text-slate-700 mb-1.5">City (Karachi / Lahore / New York etc.)</label>
+                          <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-700 mb-1.5">State</label>
+                          <input type="text" required value={state} onChange={(e) => setState(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-700 mb-1.5">ZIP Code</label>
+                          <input type="text" required value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                        </div>
+                      </div>
                     </div>
-                    <div className="mt-6">
-                      <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
-                        <input type="checkbox" checked={slidingScale} onChange={(e) => setSlidingScale(e.target.checked)} className="w-4 h-4 rounded border-slate-200 accent-emerald-500 cursor-pointer" />
-                        <span>Sliding Scale Fee</span>
-                      </label>
+                  </div>
+
+                  {/* 4. Session Formats & Financials */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-4 border-b border-emerald-50 pb-1">4. Session Formats & Financials</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Format</label>
+                        <select value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none cursor-pointer">
+                          <option value="TELEHEALTH">Telehealth Only</option>
+                          <option value="IN_PERSON">In-Person Clinic</option>
+                          <option value="HYBRID">Hybrid Office & Remote</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Fee ($ / PKR)</label>
+                        <input type="number" required value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div className="mt-6">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                          <input type="checkbox" checked={slidingScale} onChange={(e) => setSlidingScale(e.target.checked)} className="w-4 h-4 rounded border-slate-200 accent-emerald-500 cursor-pointer" />
+                          <span>Sliding Scale Fee Adjustments</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Full Clinical bio Narrative</label>
-                    <textarea rows={4} value={bioFull} onChange={(e) => setBioFull(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" style={{ resize: "none" }} />
+                  {/* 5. Clinical Focus & Commas List Fields */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-4 border-b border-emerald-50 pb-1">5. Clinical Specialties & Languages</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Specialties (comma-separated)</label>
+                        <input type="text" placeholder="Anxiety, Depression, ADHD, PTSD" value={specialtiesText} onChange={(e) => setSpecialtiesText(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Treatment Modalities (comma-separated)</label>
+                        <input type="text" placeholder="CBT, EMDR, Medication Management" value={treatmentModalitiesText} onChange={(e) => setTreatmentModalitiesText(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Target Demographics (comma-separated)</label>
+                        <input type="text" placeholder="Adults, Adolescents, Children" value={targetDemographicsText} onChange={(e) => setTargetDemographicsText(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Languages Spoken (comma-separated)</label>
+                        <input type="text" placeholder="English, Urdu, Punjabi" value={languagesText} onChange={(e) => setLanguagesText(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="sm:col-span-2 flex justify-end">
-                    <button type="submit" disabled={settingsStatus === "PENDING"} className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-6 py-2.5 rounded-lg cursor-pointer">
-                      {settingsStatus === "PENDING" ? "Saving..." : "Save Settings"}
+                  {/* 6. Professional Bio Statements */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-4 border-b border-emerald-50 pb-1">6. Professional Bios & Narrative Pitch</h4>
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Short Bio Preview (displayed in search grids)</label>
+                        <input type="text" required value={bioPreview} onChange={(e) => setBioPreview(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Introductory Consultation Video URL (YouTube, Vimeo, etc.)</label>
+                        <input type="text" value={introVideoUrl} onChange={(e) => setIntroVideoUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Full Clinical Biography Narrative</label>
+                        <textarea rows={4} required value={bioFull} onChange={(e) => setBioFull(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" style={{ resize: "none" }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 7. Social Links */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 mb-4 border-b border-emerald-50 pb-1">7. Professional Web & Social Presence</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Practice Website URL</label>
+                        <input type="url" placeholder="https://myclinic.com" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">LinkedIn Profile URL</label>
+                        <input type="url" placeholder="https://linkedin.com/in/..." value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Twitter / X Profile URL</label>
+                        <input type="url" placeholder="https://x.com/..." value={twitterUrl} onChange={(e) => setTwitterUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end border-t border-slate-100 pt-4 mt-2">
+                    <button type="submit" disabled={settingsStatus === "PENDING"} className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-8 py-3 rounded-lg cursor-pointer shadow-sm transition-all">
+                      {settingsStatus === "PENDING" ? "Saving Profile..." : "Save Settings & Recalculate Prominence"}
                     </button>
                   </div>
                 </form>
