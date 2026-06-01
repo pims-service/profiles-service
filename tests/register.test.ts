@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert";
-import { resolveCoordinates, saveBase64VideoToCloud } from "../src/app/api/doctor/register/route";
+import { resolveCoordinates, saveBase64VideoToCloud } from "../src/app/api/doctor/register/profile/route";
 
 describe("Doctor Onboarding Verification Suite", () => {
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth as adminAuth, db as adminDb, storage as adminStorage } from "@/lib/firebaseAdmin";
+import { db as adminDb, storage as adminStorage } from "@/lib/firebaseAdmin";
 import * as crypto from "crypto";
-import * as geofire from "geofire-common";
 
 // Helper to save base64 video to Cloud Storage for Firebase (Stateless & Global)
 export async function saveBase64VideoToCloud(base64Data: string): Promise<string | null> {
@@ -103,12 +102,13 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {
-      name, email, password,
+      uid,
+      name, email,
       licenseType, licenseState, licenseNumber, npiNumber,
       clinicName, address, city, state, zipCode,
       specialties, treatmentModalities, targetDemographics, languages,
       bioPreview, bioFull, headshotUrl, sessionFormat, sessionFee, slidingScale,
-      introVideoUrl, websiteUrl, linkedinUrl, twitterUrl
+      websiteUrl, linkedinUrl, twitterUrl
     } = body;
 
     const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
@@ -125,12 +125,12 @@ export async function POST(request: Request) {
     }
 
     // 0. Initial Data Integrity & Validation Checks
-    if (!name || !email || !password || !licenseType || !licenseState || !licenseNumber || !npiNumber || !clinicName || !address || !city || !state || !zipCode) {
-      return NextResponse.json({ success: false, error: "Missing required clinical provider fields. Please complete the form entirely." }, { status: 400 });
+    if (!uid) {
+      return NextResponse.json({ success: false, error: "Missing account uid. Please complete Step 1 first." }, { status: 400 });
     }
-    
-    if (password.length < 8) {
-      return NextResponse.json({ success: false, error: "Password must be at least 8 characters long for security." }, { status: 400 });
+
+    if (!name || !email || !licenseType || !licenseState || !licenseNumber || !npiNumber || !clinicName || !address || !city || !state || !zipCode) {
+      return NextResponse.json({ success: false, error: "Missing required clinical provider fields. Please complete the form entirely." }, { status: 400 });
     }
 
     const trimmedNpi = npiNumber.toString().trim();
@@ -150,65 +150,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "A provider with this License number is already registered in our system." }, { status: 400 });
     }
 
-    // 1. Check duplicate email in Firebase Auth
-    try {
-      await adminAuth.getUserByEmail(email);
-      return NextResponse.json(
-        { success: false, error: "An account with this email already exists." },
-        { status: 400 }
-      );
-    } catch (err) {
-      // "auth/user-not-found" is what we want!
-      if (err.code !== "auth/user-not-found") {
-        throw err;
-      }
-    }
-
     // 2. Resolve geographic coordinates and geohash
-    const { latitude, longitude } = resolveCoordinates(city, state);
-    const hashValue = geofire.geohashForLocation([latitude, longitude]);
-
-    // 3. Process webcam intro video pitch
-    let resolvedVideoUrl = null;
-    if (introVideoUrl) {
-      resolvedVideoUrl = await saveBase64VideoToCloud(introVideoUrl);
-    }
-
-    // 4. Create User in Firebase Authentication
-    const authUser = await adminAuth.createUser({
-      email,
-      password,
-      displayName: name,
-    });
-    const uid = authUser.uid;
-
-    // Set custom role claim for authorization
-    await adminAuth.setCustomUserClaims(uid, { role: "PSYCHIATRIST" });
-
-    // 4.1 Trigger Email Verification via REST API
-    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
-    if (apiKey && apiKey !== "your-api-key" && apiKey !== "mock-api-key") {
-      try {
-        // Sign in briefly to get ID token
-        const signInRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, returnSecureToken: true }),
-        });
-        
-        if (signInRes.ok) {
-          const signInData = await signInRes.json();
-          // Send verification email
-          await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ requestType: "VERIFY_EMAIL", idToken: signInData.idToken }),
-          });
-        }
-      } catch (emailErr) {
-        console.error("Failed to trigger email verification:", emailErr);
-      }
-    }
 
     // 5. Database writes inside Firestore collections
     // Write user profile metadata

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, auth } from "@/lib/firebaseAdmin";
 import { calculateProfileScore } from "@/lib/ranking";
-import { resolveCoordinates } from "@/app/api/doctor/register/route";
+import { resolveCoordinates } from "@/app/api/doctor/register/profile/route";
 import * as geofire from "geofire-common";
 
 export async function PUT(request: Request) {

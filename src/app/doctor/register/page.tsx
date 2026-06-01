@@ -7,6 +7,7 @@ export default function PakistaniDoctorRegister() {
   const [activeStep, setActiveStep] = useState(1);
   const [status, setStatus] = useState<"FORM" | "SUBMITTING" | "SUCCESS" | "ERROR">("FORM");
   const [errorMessage, setErrorMessage] = useState("");
+  const [uid, setUid] = useState<string | null>(null);
 
   // Form State: Step 1 (Account Details)
   const [name, setName] = useState("");
@@ -162,6 +163,28 @@ export default function PakistaniDoctorRegister() {
     };
   }, [stream]);
 
+  // Polling for email verification
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeStep === 1.5 && uid) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/doctor/register/check-verification?uid=${uid}`);
+          const data = await res.json();
+          if (data.success && data.emailVerified) {
+            setActiveStep(2);
+            clearInterval(interval);
+          }
+        } catch (e) {
+          console.error("Failed to poll verification", e);
+        }
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeStep, uid]);
+
   // Step Validation Mechanics
   const handleNextStep = () => {
     setErrorMessage("");
@@ -174,7 +197,37 @@ export default function PakistaniDoctorRegister() {
         setErrorMessage("Please input a valid professional email address.");
         return;
       }
-      setActiveStep(2);
+      
+      setStatus("SUBMITTING");
+      fetch("/api/doctor/register/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setUid(data.uid);
+          // If already verified (resume flow), skip polling
+          if (data.message && data.message.includes("verified")) {
+            setActiveStep(2);
+          } else {
+            setActiveStep(1.5);
+          }
+          setStatus("FORM");
+        } else {
+          setErrorMessage(data.error);
+          setStatus("FORM");
+        }
+      })
+      .catch(() => {
+        setErrorMessage("Network error during account creation.");
+        setStatus("FORM");
+      });
+      
+    } else if (activeStep === 1.5) {
+      // Prevent manual advancement; useEffect handles it.
+      return;
     } else if (activeStep === 2) {
       if (!licenseNumber.trim()) {
         setErrorMessage("Please input your clinical registration number.");
@@ -214,10 +267,11 @@ export default function PakistaniDoctorRegister() {
     stopCamera();
 
     try {
-      const res = await fetch("/api/doctor/register", {
+      const res = await fetch("/api/doctor/register/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          uid,
           name,
           email,
           password,
@@ -700,7 +754,18 @@ export default function PakistaniDoctorRegister() {
               </div>
 
               <div className="w-full sm:w-auto">
-                {activeStep < 4 ? (
+                {activeStep === 1.5 && (
+                  <button type="button" disabled className="btn btn-primary px-10 py-3.5 opacity-50 cursor-not-allowed">
+                    Waiting for Verification...
+                  </button>
+                )}
+                {activeStep > 1 && activeStep !== 1.5 && activeStep < 4 && (
+                  <button type="button" onClick={handleNextStep} disabled={status === "SUBMITTING"} className="btn btn-primary px-10 py-3.5 shadow-md shadow-emerald-600/10 hover:shadow-emerald-600/20 active:scale-[0.98] transition-all group">
+                    Continue to Application
+                    <span className="inline-block ml-2 group-hover:translate-x-1 transition-transform">→</span>
+                  </button>
+                )}
+                {activeStep === 1 && (
                   <button
                     type="button"
                     onClick={handleNextStep}
@@ -708,15 +773,14 @@ export default function PakistaniDoctorRegister() {
                   >
                     Continue to Step {activeStep + 1}
                   </button>
-                ) : (
+                )}
+                {activeStep === 4 && (
                   <button
                     type="submit"
                     disabled={status === "SUBMITTING"}
                     className="w-full sm:w-auto text-xs font-bold text-white bg-slate-900 hover:bg-black transition-all rounded-xl px-12 py-3.5 shadow-md shadow-slate-900/10 cursor-pointer text-center"
                   >
-                    {status === "SUBMITTING"
-                      ? "Submitting application..."
-                      : "Complete Registration"}
+                    {status === "SUBMITTING" ? "Submitting application..." : "Complete Registration"}
                   </button>
                 )}
               </div>
