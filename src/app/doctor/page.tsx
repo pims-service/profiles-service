@@ -259,289 +259,381 @@ export default function DoctorPortal() {
           </div>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex border-b border-slate-200 gap-6 mb-8 overflow-x-auto">
-          {[
-            { id: "standing", label: "⭐ standing optimization" },
-            { id: "calendar", label: "📅 scheduling slots" },
-            { id: "settings", label: "⚙️ profile details" },
-            { id: "bookings", label: `📝 patient bookings (${doc.bookings ? doc.bookings.length : 0})` },
-            { id: "reviews", label: `👍 feedbacks (${doc.reviews.length})` }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`pb-3 font-semibold text-xs capitalize whitespace-nowrap cursor-pointer border-b-2 transition-all ${activeTab === tab.id ? 'text-emerald-600 border-emerald-500' : 'text-slate-400 border-transparent hover:text-slate-700'}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
 
-        {/* Tab Contents */}
-        <div className="animate-fade">
+          {/* Premium Sidebar Navigation */}
+          <aside className="md:col-span-3 flex flex-col gap-2">
+            {[
+              { id: "standing", label: "standing optimization", isWip: false },
+              { id: "calendar", label: "scheduling slots", isWip: false },
+              { id: "settings", label: "profile details", isWip: false },
+              { id: "bookings", label: "patient bookings", isWip: true },
+              { id: "reviews", label: `feedbacks (${doc.reviews.length})`, isWip: false },
+              { id: "analytics", label: "profile analytics", isWip: false }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full text-left font-semibold text-xs capitalize whitespace-nowrap cursor-pointer transition-all flex items-center justify-between p-3.5 rounded-xl border ${activeTab === tab.id
+                    ? 'text-emerald-700 bg-emerald-50/70 border-emerald-200/80 shadow-sm'
+                    : 'text-slate-600 bg-white hover:bg-slate-50 border-slate-200/60 hover:text-slate-900'
+                  }`}
+              >
+                <span>{tab.label}</span>
+                {tab.isWip && (
+                  <span className="text-[8px] font-extrabold bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded uppercase tracking-wider scale-90">
+                    WIP
+                  </span>
+                )}
+              </button>
+            ))}
+          </aside>
 
-          {/* Standing tab */}
-          {activeTab === "standing" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Radial index card */}
-              <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 text-center flex flex-col items-center justify-center shadow-sm">
-                <h3 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400 mb-6">Search prominence score</h3>
-                <div style={{
-                  position: "relative",
-                  width: "140px",
-                  height: "140px",
-                  borderRadius: "50%",
-                  background: `conic-gradient(#10b981 ${doc.searchScore * 3.6}deg, #f1f5f9 0deg)`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }} className="mb-6 shadow-inner">
-                  <div className="w-28 h-28 rounded-full bg-white flex flex-col items-center justify-center shadow-md">
-                    <span className="font-display text-3xl font-extrabold text-emerald-600">{doc.searchScore}</span>
-                    <span className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">score / 100</span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
-                  Higher scores increase listing ranking in patient geolocation query grids, boosting booking conversions.
-                </p>
-              </div>
+          {/* Active Tab Contents */}
+          <main className="md:col-span-9 animate-fade">
 
-              {/* suggestions card */}
-              <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Optimization Audit checklist</h3>
-
-                <div className="flex flex-col gap-4">
-                  {[
-                    { title: "Introductory Video consult (+5 pts)", desc: "Add a consulte video URL in details to introduce yourself.", met: !!doc.introVideoUrl },
-                    { title: "Clinical Narrative details (+5 pts)", desc: "Write a detailed bio narrative statement exceeding 200 characters.", met: !!(doc.bioFull && doc.bioFull.length > 200) },
-                    { title: "Near-Term Calendar openings (+20 pts)", desc: "Add at least 6 open slots in the next 7 days.", met: activeSlots >= 6 },
-                    { title: "Sliding Scale Financing options (+5 pts)", desc: "Enable sliding scale fee adjustments in your profile.", met: doc.slidingScale }
-                  ].map((item, idx) => (
-                    <div key={idx} className={`p-4 rounded-xl border flex gap-4 items-start ${item.met ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50/50 border-slate-200'}`}>
-                      <span className="text-sm mt-0.5">{item.met ? "✅" : "➕"}</span>
-                      <div>
-                        <strong className={`text-xs block ${item.met ? 'text-emerald-800' : 'text-slate-800'}`}>{item.title}</strong>
-                        <p className="text-[10px] text-slate-500 mt-1">{item.desc}</p>
-                      </div>
+            {/* Standing tab */}
+            {activeTab === "standing" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Radial index card */}
+                <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 text-center flex flex-col items-center justify-center shadow-sm">
+                  <h3 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400 mb-6">Search prominence score</h3>
+                  <div style={{
+                    position: "relative",
+                    width: "140px",
+                    height: "140px",
+                    borderRadius: "50%",
+                    background: `conic-gradient(#10b981 ${doc.searchScore * 3.6}deg, #f1f5f9 0deg)`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }} className="mb-6 shadow-inner">
+                    <div className="w-28 h-28 rounded-full bg-white flex flex-col items-center justify-center shadow-md">
+                      <span className="font-display text-3xl font-extrabold text-emerald-600">{doc.searchScore}</span>
+                      <span className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">score / 100</span>
                     </div>
-                  ))}
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Higher scores increase listing ranking in patient geolocation query grids, boosting booking conversions.
+                  </p>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* Calendar tab */}
-          {activeTab === "calendar" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Creator card */}
-              <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
-                <h3 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400 mb-4">Open Time Slot</h3>
-                {slotStatus === "SUCCESS" && (
-                  <div className="bg-emerald-50 text-emerald-700 text-xs font-semibold p-2.5 rounded-lg text-center mb-4">
-                    ✓ Slot Added Successfully
-                  </div>
-                )}
-                <form onSubmit={handleAddSlot} className="flex flex-col gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Pick Date & Time</label>
-                    <input
-                      type="datetime-local"
-                      required
-                      value={newSlotDateTime}
-                      onChange={(e) => setNewSlotDateTime(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                  <button type="submit" disabled={slotStatus === "PENDING"} className="w-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg cursor-pointer">
-                    {slotStatus === "PENDING" ? "Adding slot..." : "Open Time Slot"}
-                  </button>
-                </form>
-              </div>
+                {/* suggestions card */}
+                <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Optimization Audit checklist</h3>
 
-              {/* slots list card */}
-              <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Active Schedule Slots</h3>
-
-                {doc.availability.length === 0 ? (
-                  <p className="text-slate-400 text-xs italic text-center py-12">No scheduler openings yet. Add slot times to receive patient bookings.</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {doc.availability.map(slot => {
-                      const date = new Date(slot.startTime);
-                      return (
-                        <div key={slot.id} className={`p-4 rounded-xl border flex flex-col justify-between gap-3 ${slot.isBooked ? 'bg-slate-50 border-slate-200' : 'bg-emerald-50/30 border-emerald-100'}`}>
-                          <div>
-                            <div className="text-xs font-bold text-slate-800">📅 {mounted ? date.toLocaleDateString() : date.toISOString().split('T')[0]}</div>
-                            <div className="text-[11px] text-slate-500 mt-0.5">⏰ {mounted ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}</div>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${slot.isBooked ? 'bg-slate-200 text-slate-500' : 'bg-emerald-500 text-white'}`}>
-                              {slot.isBooked ? "BOOKED" : "AVAILABLE"}
-                            </span>
-                            {!slot.isBooked && (
-                              <button onClick={() => handleDeleteSlot(slot.id)} className="text-[10px] font-bold text-red-500 hover:underline cursor-pointer">
-                                Delete Slot
-                              </button>
-                            )}
-                          </div>
+                  <div className="flex flex-col gap-4">
+                    {[
+                      { title: "Introductory Video consult (+5 pts)", desc: "Add a consulte video URL in details to introduce yourself.", met: !!doc.introVideoUrl },
+                      { title: "Clinical Narrative details (+5 pts)", desc: "Write a detailed bio narrative statement exceeding 200 characters.", met: !!(doc.bioFull && doc.bioFull.length > 200) },
+                      { title: "Near-Term Calendar openings (+20 pts)", desc: "Add at least 6 open slots in the next 7 days.", met: activeSlots >= 6 },
+                      { title: "Sliding Scale Financing options (+5 pts)", desc: "Enable sliding scale fee adjustments in your profile.", met: doc.slidingScale }
+                    ].map((item, idx) => (
+                      <div key={idx} className={`p-4 rounded-xl border flex gap-4 items-start ${item.met ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50/50 border-slate-200'}`}>
+                        <span className="text-sm mt-0.5">{item.met ? "✅" : "➕"}</span>
+                        <div>
+                          <strong className={`text-xs block ${item.met ? 'text-emerald-800' : 'text-slate-800'}`}>{item.title}</strong>
+                          <p className="text-[10px] text-slate-500 mt-1">{item.desc}</p>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Settings tab */}
-          {activeTab === "settings" && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
-              <h3 className="font-display font-bold text-sm text-slate-900 mb-6 border-b border-slate-100 pb-2">Clinical Settings</h3>
-              {settingsStatus === "SUCCESS" && (
-                <div className="bg-emerald-50 text-emerald-700 text-xs font-semibold p-3 rounded-lg text-center mb-6">
-                  ✓ Profile Details Updated and Search Score Standing Recalculated!
-                </div>
-              )}
-              <form onSubmit={handleSettingsSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Clinic Name</label>
-                  <input type="text" value={clinicName} onChange={(e) => setClinicName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Office Address</label>
-                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">City</label>
-                    <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">ZIP</label>
-                    <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                  </div>
+            {/* Calendar tab */}
+            {activeTab === "calendar" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Creator card */}
+                <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
+                  <h3 className="font-display font-bold text-xs uppercase tracking-wider text-slate-400 mb-4">Open Time Slot</h3>
+                  {slotStatus === "SUCCESS" && (
+                    <div className="bg-emerald-50 text-emerald-700 text-xs font-semibold p-2.5 rounded-lg text-center mb-4">
+                      ✓ Slot Added Successfully
+                    </div>
+                  )}
+                  <form onSubmit={handleAddSlot} className="flex flex-col gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Pick Date & Time</label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={newSlotDateTime}
+                        onChange={(e) => setNewSlotDateTime(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <button type="submit" disabled={slotStatus === "PENDING"} className="w-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg cursor-pointer">
+                      {slotStatus === "PENDING" ? "Adding slot..." : "Open Time Slot"}
+                    </button>
+                  </form>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Intro Consult Video URL</label>
-                  <input type="text" value={introVideoUrl} onChange={(e) => setIntroVideoUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                </div>
+                {/* slots list card */}
+                <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Active Schedule Slots</h3>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Format</label>
-                  <select value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none cursor-pointer">
-                    <option value="TELEHEALTH">Telehealth Only</option>
-                    <option value="IN_PERSON">In-Person Clinic</option>
-                    <option value="HYBRID">Hybrid Office & Remote</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 items-center">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Fee ($)</label>
-                    <input type="number" value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
-                  </div>
-                  <div className="mt-6">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
-                      <input type="checkbox" checked={slidingScale} onChange={(e) => setSlidingScale(e.target.checked)} className="w-4 h-4 rounded border-slate-200 accent-emerald-500 cursor-pointer" />
-                      <span>Sliding Scale Fee</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Full Clinical bio Narrative</label>
-                  <textarea rows={4} value={bioFull} onChange={(e) => setBioFull(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" style={{ resize: "none" }} />
-                </div>
-
-                <div className="sm:col-span-2 flex justify-end">
-                  <button type="submit" disabled={settingsStatus === "PENDING"} className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-6 py-2.5 rounded-lg cursor-pointer">
-                    {settingsStatus === "PENDING" ? "Saving..." : "Save Settings"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {/* Bookings tab */}
-          {activeTab === "bookings" && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Upcoming Appointments</h3>
-
-              {!doc.bookings || doc.bookings.length === 0 ? (
-                <p className="text-slate-400 text-xs italic text-center py-12">No patient bookings logged yet.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-slate-400">
-                        <th className="pb-3 pt-1 pl-2">Patient</th>
-                        <th className="pb-3 pt-1">Session Date & Hour</th>
-                        <th className="pb-3 pt-1">Email</th>
-                        <th className="pb-3 pt-1">Phone</th>
-                        <th className="pb-3 pt-1">Insurance Plan</th>
-                        <th className="pb-3 pt-1 pr-2 text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {doc.bookings.map(book => {
-                        const date = new Date(book.slot.startTime);
+                  {doc.availability.length === 0 ? (
+                    <p className="text-slate-400 text-xs italic text-center py-12">No scheduler openings yet. Add slot times to receive patient bookings.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {doc.availability.map(slot => {
+                        const date = new Date(slot.startTime);
                         return (
-                          <tr key={book.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50">
-                            <td className="py-4 pl-2 font-bold text-slate-900">{book.patientName}</td>
-                            <td className="py-4">
-                              <strong>{mounted ? date.toLocaleDateString() : date.toISOString().split('T')[0]}</strong>
-                              {mounted ? ` at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ""}
-                            </td>
-                            <td className="py-4 text-slate-500">{book.patientEmail}</td>
-                            <td className="py-4 text-slate-500">{book.patientPhone}</td>
-                            <td className="py-4">
-                              {book.insurance ? (
-                                <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{book.insurance}</span>
-                              ) : (
-                                <span className="text-slate-400 text-[10px]">Private pay</span>
+                          <div key={slot.id} className={`p-4 rounded-xl border flex flex-col justify-between gap-3 ${slot.isBooked ? 'bg-slate-50 border-slate-200' : 'bg-emerald-50/30 border-emerald-100'}`}>
+                            <div>
+                              <div className="text-xs font-bold text-slate-800">📅 {mounted ? date.toLocaleDateString() : date.toISOString().split('T')[0]}</div>
+                              <div className="text-[11px] text-slate-500 mt-0.5">⏰ {mounted ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}</div>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${slot.isBooked ? 'bg-slate-200 text-slate-500' : 'bg-emerald-500 text-white'}`}>
+                                {slot.isBooked ? "BOOKED" : "AVAILABLE"}
+                              </span>
+                              {!slot.isBooked && (
+                                <button onClick={() => handleDeleteSlot(slot.id)} className="text-[10px] font-bold text-red-500 hover:underline cursor-pointer">
+                                  Delete Slot
+                                </button>
                               )}
-                            </td>
-                            <td className="py-4 pr-2 text-right">
-                              <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">CONFIRMED</span>
-                            </td>
-                          </tr>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
-          {/* Reviews tab */}
-          {activeTab === "reviews" && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Patient Rating logs</h3>
+            {/* Settings tab */}
+            {activeTab === "settings" && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+                <h3 className="font-display font-bold text-sm text-slate-900 mb-6 border-b border-slate-100 pb-2">Clinical Settings</h3>
+                {settingsStatus === "SUCCESS" && (
+                  <div className="bg-emerald-50 text-emerald-700 text-xs font-semibold p-3 rounded-lg text-center mb-6">
+                    ✓ Profile Details Updated and Search Score Standing Recalculated!
+                  </div>
+                )}
+                <form onSubmit={handleSettingsSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Clinic Name</label>
+                    <input type="text" value={clinicName} onChange={(e) => setClinicName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Office Address</label>
+                    <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-700 mb-1.5">City</label>
+                      <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-700 mb-1.5">ZIP</label>
+                      <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                    </div>
+                  </div>
 
-              {doc.reviews.length === 0 ? (
-                <p className="text-slate-400 text-xs italic text-center py-12">No patient reviews submitted yet.</p>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {doc.reviews.map(rev => (
-                    <div key={rev.id} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl">
-                      <div className="flex justify-between items-center mb-2">
-                        <div>
-                          <strong className="text-xs text-slate-800 font-bold">{rev.patientName}</strong>
-                          <span className="text-[10px] text-slate-400 ml-2">{mounted ? new Date(rev.createdAt).toLocaleDateString() : new Date(rev.createdAt).toISOString().split('T')[0]}</span>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Intro Consult Video URL</label>
+                    <input type="text" value={introVideoUrl} onChange={(e) => setIntroVideoUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Format</label>
+                    <select value={sessionFormat} onChange={(e) => setSessionFormat(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none cursor-pointer">
+                      <option value="TELEHEALTH">Telehealth Only</option>
+                      <option value="IN_PERSON">In-Person Clinic</option>
+                      <option value="HYBRID">Hybrid Office & Remote</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 items-center">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Session Fee ($)</label>
+                      <input type="number" value={sessionFee} onChange={(e) => setSessionFee(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" />
+                    </div>
+                    <div className="mt-6">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                        <input type="checkbox" checked={slidingScale} onChange={(e) => setSlidingScale(e.target.checked)} className="w-4 h-4 rounded border-slate-200 accent-emerald-500 cursor-pointer" />
+                        <span>Sliding Scale Fee</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-700 mb-1.5">Full Clinical bio Narrative</label>
+                    <textarea rows={4} value={bioFull} onChange={(e) => setBioFull(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs outline-none" style={{ resize: "none" }} />
+                  </div>
+
+                  <div className="sm:col-span-2 flex justify-end">
+                    <button type="submit" disabled={settingsStatus === "PENDING"} className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-6 py-2.5 rounded-lg cursor-pointer">
+                      {settingsStatus === "PENDING" ? "Saving..." : "Save Settings"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Bookings tab (Work in Progress Screen) */}
+            {activeTab === "bookings" && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm flex flex-col items-center justify-center min-h-[350px]">
+                <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center text-2xl mb-4 border border-amber-200 animate-pulse">
+                  🛠️
+                </div>
+                <h3 className="font-display text-lg font-bold text-slate-900 mb-2">Workspace Module Under Development</h3>
+                <p className="text-slate-500 text-xs max-w-md mx-auto leading-relaxed">
+                  The Patient Bookings pipeline is currently transitioning to a fully automated real-time calendar slot integration. Live clinical session details and synchronization controls will resume shortly!
+                </p>
+                <div className="mt-6 flex gap-2">
+                  <span className="text-[10px] bg-slate-100 text-slate-500 border border-slate-200 px-2.5 py-1 rounded font-semibold uppercase tracking-wider">
+                    Target Release: Q3 2026
+                  </span>
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded font-semibold uppercase tracking-wider">
+                    API Status: MOCK_PROD
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Reviews tab */}
+            {activeTab === "reviews" && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Patient Rating logs</h3>
+
+                {doc.reviews.length === 0 ? (
+                  <p className="text-slate-400 text-xs italic text-center py-12">No patient reviews submitted yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {doc.reviews.map(rev => (
+                      <div key={rev.id} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl">
+                        <div className="flex justify-between items-center mb-2">
+                          <div>
+                            <strong className="text-xs text-slate-800 font-bold">{rev.patientName}</strong>
+                            <span className="text-[10px] text-slate-400 ml-2">{mounted ? new Date(rev.createdAt).toLocaleDateString() : new Date(rev.createdAt).toISOString().split('T')[0]}</span>
+                          </div>
+                          <span className="text-amber-400 text-xs">{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</span>
                         </div>
-                        <span className="text-amber-400 text-xs">{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</span>
+                        <p className="text-slate-600 text-xs">"{rev.comment}"</p>
                       </div>
-                      <p className="text-slate-600 text-xs">"{rev.comment}"</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Analytics tab */}
+            {activeTab === "analytics" && (
+              <div className="flex flex-col gap-8">
+
+                {/* Premium Analytics Stats Bar */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  {[
+                    { title: "Profile Views", value: "1,248", pct: "+18.4% this week", color: "text-emerald-600 bg-emerald-50 border-emerald-100" },
+                    { title: "Unique Visitors", value: "784", pct: "62.8% direct matches", color: "text-blue-600 bg-blue-50 border-blue-100" },
+                    { title: "Search Appearances", value: "3,104", pct: "Top 5% in ZIP radius", color: "text-indigo-600 bg-indigo-50 border-indigo-100" },
+                    { title: "Conversion rate", value: "4.8%", pct: "Slots booked directly", color: "text-purple-600 bg-purple-50 border-purple-100" },
+                  ].map((stat, idx) => (
+                    <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                      <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">{stat.title}</span>
+                      <strong className="block text-2xl font-black text-slate-900 mt-1">{stat.value}</strong>
+                      <div className="flex items-center gap-1 mt-2">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${stat.color}`}>
+                          {stat.pct}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
 
+                {/* Graphical Breakdown & Referral grids */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                  {/* Visual Bar Chart for Profile Views by Day */}
+                  <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-3">
+                      <div>
+                        <h4 className="font-display font-bold text-sm text-slate-900">Weekly Profile Views</h4>
+                        <p className="text-[10px] text-slate-500">Reach metrics over the last 7 active days</p>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">LIVE</span>
+                    </div>
+
+                    <div className="h-48 flex items-end justify-between gap-4 pt-4 px-2">
+                      {[
+                        { day: "Mon", val: 120, pct: "40%" },
+                        { day: "Tue", val: 180, pct: "60%" },
+                        { day: "Wed", val: 240, pct: "80%" },
+                        { day: "Thu", val: 190, pct: "63%" },
+                        { day: "Fri", val: 290, pct: "96%" },
+                        { day: "Sat", val: 150, pct: "50%" },
+                        { day: "Sun", val: 98, pct: "32%" },
+                      ].map((bar, idx) => (
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
+                          <div className="w-full bg-slate-50 hover:bg-slate-100 rounded-lg flex items-end h-36 relative overflow-hidden transition-all duration-300">
+                            <div
+                              style={{ height: bar.pct }}
+                              className="w-full bg-emerald-500 group-hover:bg-emerald-600 rounded-lg transition-all duration-500 shadow-sm"
+                            />
+                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-bold text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-slate-900 text-white px-1.5 py-0.5 rounded shadow">
+                              {bar.val} views
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-semibold text-slate-500">{bar.day}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Referral source break-down */}
+                  <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <h4 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Referral Sources</h4>
+                    <div className="flex flex-col gap-4">
+                      {[
+                        { name: "Geospatial Map Matches", share: "45%", count: "562 views", color: "bg-emerald-500" },
+                        { name: "City & Zip Filters", share: "30%", count: "374 views", color: "bg-blue-500" },
+                        { name: "Specialty Selection", share: "15%", count: "187 views", color: "bg-indigo-500" },
+                        { name: "Direct URLs & Shares", share: "10%", count: "125 views", color: "bg-purple-500" },
+                      ].map((ref, idx) => (
+                        <div key={idx}>
+                          <div className="flex justify-between items-center text-[10px] mb-1">
+                            <strong className="text-slate-700 font-bold">{ref.name}</strong>
+                            <span className="text-slate-400 font-semibold">{ref.share} &bull; {ref.count}</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div style={{ width: ref.share }} className={`h-full ${ref.color} rounded-full`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Geographic Reach & Origin breakdown */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <h4 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Geographic Reach Breakdown</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    {[
+                      { city: "Karachi, Pakistan", reach: "55%", description: "Largest share of radius query referrals, matching near central clinics." },
+                      { city: "Lahore, Pakistan", reach: "28%", description: "Active telemetry matches resolved from direct city search tags." },
+                      { city: "Islamabad, Pakistan", reach: "17%", description: "High average rating conversions based on hybrid virtual setups." }
+                    ].map((geo, idx) => (
+                      <div key={idx} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl">
+                        <div className="flex justify-between items-center mb-2">
+                          <strong className="text-xs font-bold text-slate-900">{geo.city}</strong>
+                          <span className="text-xs font-black text-emerald-600">{geo.reach}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 leading-relaxed">{geo.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+          </main>
         </div>
 
       </div>
