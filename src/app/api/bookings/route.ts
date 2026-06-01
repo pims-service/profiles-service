@@ -13,6 +13,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(patientEmail)) {
+      return NextResponse.json(
+        { success: false, error: "Invalid email address format." },
+        { status: 400 }
+      );
+    }
+
     const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
 
     if (isMockMode) {
@@ -33,21 +41,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // 1. Verify and update calendar slot to booked
+    // 1. Use an atomic transaction to prevent double booking race conditions
     const docRef = db.collection("psychiatrists").doc(psychiatristId);
     const slotRef = docRef.collection("availability").doc(slotId);
-    const slotSnap = await slotRef.get();
-
-    if (!slotSnap.exists || slotSnap.data()?.isBooked) {
-      return NextResponse.json(
-        { success: false, error: "Selected slot is unavailable or already booked." },
-        { status: 400 }
-      );
-    }
-
-    // 2. Perform updates in a batch transaction
     const bookingRef = docRef.collection("bookings").doc();
-    const batch = db.batch();
 
     const bookingData = {
       id: bookingRef.id,
@@ -61,10 +58,26 @@ export async function POST(request: Request) {
       createdAt: new Date(),
     };
 
-    batch.set(bookingRef, bookingData);
-    batch.update(slotRef, { isBooked: true });
-
-    await batch.commit();
+    try {
+      await db.runTransaction(async (transaction) => {
+        const slotSnap = await transaction.get(slotRef);
+        if (!slotSnap.exists) {
+          throw new Error("Selected slot does not exist.");
+        }
+        if (slotSnap.data()?.isBooked) {
+          throw new Error("Selected slot is already booked.");
+        }
+        
+        transaction.update(slotRef, { isBooked: true });
+        transaction.set(bookingRef, bookingData);
+      });
+    } catch (txError) {
+      const error = txError as Error;
+      return NextResponse.json(
+        { success: false, error: error.message || "Failed to book slot." },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

@@ -301,6 +301,25 @@ export async function GET(request: Request) {
     // 6. Apply Limit Slicing
     results = results.slice(0, limit);
 
+    // 7. Track Search Appearances Asynchronously
+    if (!isMockMode && results.length > 0) {
+      const source = originCoords ? "MAP" : "CITY_ZIP";
+      const finalSource = specialty ? "SPECIALTY" : source;
+      
+      const trackingPromises = results.map(doc => 
+        db.collection("analytics_events").add({
+          doctorId: doc.id,
+          eventType: "SEARCH_APPEARANCE",
+          source: finalSource,
+          city: resolvedName || "Unknown",
+          sessionId: "anonymous", // Could be hashed IP in the future
+          createdAt: new Date().toISOString()
+        })
+      );
+      // Fire and forget, don't await and block the user's search
+      Promise.all(trackingPromises).catch(err => console.error("Search tracking failed:", err));
+    }
+
     return NextResponse.json({
       success: true,
       resolvedLocationName: resolvedName,

@@ -51,6 +51,128 @@ interface DoctorProfile {
   bookings: Booking[];
 }
 
+function AnalyticsDashboard({ doctorId }: { doctorId: string }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/doctor/analytics?doctorId=${doctorId}`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) setData(json.data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [doctorId]);
+
+  if (loading) return <div className="py-24 text-center text-slate-500 font-medium animate-pulse">Loading Live Analytics...</div>;
+  if (!data) return <div className="py-24 text-center text-slate-500">Failed to load analytics.</div>;
+
+  const maxWeeklyViews = Math.max(...data.profileViews.weekly.map((w: { val: number }) => w.val), 1);
+  const colors = ["bg-emerald-500", "bg-blue-500", "bg-indigo-500", "bg-purple-500"];
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Premium Analytics Stats Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        {[
+          { title: "Profile Views", value: data.profileViews.total, pct: "Last 30 days", color: "text-emerald-600 bg-emerald-50 border-emerald-100" },
+          { title: "Unique Visitors", value: data.uniqueVisitors, pct: "Last 30 days", color: "text-blue-600 bg-blue-50 border-blue-100" },
+          { title: "Search Appearances", value: data.searchAppearances, pct: "Last 30 days", color: "text-indigo-600 bg-indigo-50 border-indigo-100" },
+          { title: "Conversion rate", value: data.conversionRate, pct: "Slots booked directly", color: "text-purple-600 bg-purple-50 border-purple-100" },
+        ].map((stat, idx) => (
+          <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">{stat.title}</span>
+            <strong className="block text-2xl font-black text-slate-900 mt-1">{stat.value}</strong>
+            <div className="flex items-center gap-1 mt-2">
+              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${stat.color}`}>
+                {stat.pct}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Graphical Breakdown & Referral grids */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Visual Bar Chart for Profile Views by Day */}
+        <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-3">
+            <div>
+              <h4 className="font-display font-bold text-sm text-slate-900">Weekly Profile Views</h4>
+              <p className="text-[10px] text-slate-500">Reach metrics over the last 7 active days</p>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">LIVE</span>
+          </div>
+
+          <div className="h-48 flex items-end justify-between gap-4 pt-4 px-2">
+            {data.profileViews.weekly.map((bar: { val: number, day: string }, idx: number) => {
+              const heightPct = `${Math.round((bar.val / maxWeeklyViews) * 100)}%`;
+              return (
+                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
+                  <div className="w-full bg-slate-50 hover:bg-slate-100 rounded-lg flex items-end h-36 relative overflow-hidden transition-all duration-300">
+                    <div
+                      style={{ height: heightPct }}
+                      className="w-full bg-emerald-500 group-hover:bg-emerald-600 rounded-lg transition-all duration-500 shadow-sm"
+                    />
+                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-bold text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-slate-900 text-white px-1.5 py-0.5 rounded shadow">
+                      {bar.val} views
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-500">{bar.day}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Referral source break-down */}
+        <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <h4 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Referral Sources</h4>
+          {data.referralSources.length === 0 ? (
+            <p className="text-slate-400 text-xs italic">No referral data yet.</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {data.referralSources.map((ref: { name: string, share: string, count: number }, idx: number) => (
+                <div key={idx}>
+                  <div className="flex justify-between items-center text-[10px] mb-1">
+                    <strong className="text-slate-700 font-bold">{ref.name}</strong>
+                    <span className="text-slate-400 font-semibold">{ref.share} &bull; {ref.count} views</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div style={{ width: ref.share }} className={`h-full ${colors[idx % colors.length]} rounded-full`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Geographic Reach & Origin breakdown */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <h4 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Geographic Reach Breakdown</h4>
+        {data.geographicReach.length === 0 ? (
+          <p className="text-slate-400 text-xs italic">No geographic data yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {data.geographicReach.map((geo: { city: string, reach: string, description: string }, idx: number) => (
+              <div key={idx} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl">
+                <div className="flex justify-between items-center mb-2">
+                  <strong className="text-xs font-bold text-slate-900">{geo.city}</strong>
+                  <span className="text-xs font-black text-emerald-600">{geo.reach}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-relaxed">{geo.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function DoctorPortal() {
   const router = useRouter();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -705,115 +827,7 @@ export default function DoctorPortal() {
             )}
 
             {/* Analytics tab */}
-            {activeTab === "analytics" && (
-              <div className="flex flex-col gap-8">
-
-                {/* Premium Analytics Stats Bar */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  {[
-                    { title: "Profile Views", value: "1,248", pct: "+18.4% this week", color: "text-emerald-600 bg-emerald-50 border-emerald-100" },
-                    { title: "Unique Visitors", value: "784", pct: "62.8% direct matches", color: "text-blue-600 bg-blue-50 border-blue-100" },
-                    { title: "Search Appearances", value: "3,104", pct: "Top 5% in ZIP radius", color: "text-indigo-600 bg-indigo-50 border-indigo-100" },
-                    { title: "Conversion rate", value: "4.8%", pct: "Slots booked directly", color: "text-purple-600 bg-purple-50 border-purple-100" },
-                  ].map((stat, idx) => (
-                    <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                      <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">{stat.title}</span>
-                      <strong className="block text-2xl font-black text-slate-900 mt-1">{stat.value}</strong>
-                      <div className="flex items-center gap-1 mt-2">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${stat.color}`}>
-                          {stat.pct}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Graphical Breakdown & Referral grids */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                  {/* Visual Bar Chart for Profile Views by Day */}
-                  <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                    <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-3">
-                      <div>
-                        <h4 className="font-display font-bold text-sm text-slate-900">Weekly Profile Views</h4>
-                        <p className="text-[10px] text-slate-500">Reach metrics over the last 7 active days</p>
-                      </div>
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">LIVE</span>
-                    </div>
-
-                    <div className="h-48 flex items-end justify-between gap-4 pt-4 px-2">
-                      {[
-                        { day: "Mon", val: 120, pct: "40%" },
-                        { day: "Tue", val: 180, pct: "60%" },
-                        { day: "Wed", val: 240, pct: "80%" },
-                        { day: "Thu", val: 190, pct: "63%" },
-                        { day: "Fri", val: 290, pct: "96%" },
-                        { day: "Sat", val: 150, pct: "50%" },
-                        { day: "Sun", val: 98, pct: "32%" },
-                      ].map((bar, idx) => (
-                        <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                          <div className="w-full bg-slate-50 hover:bg-slate-100 rounded-lg flex items-end h-36 relative overflow-hidden transition-all duration-300">
-                            <div
-                              style={{ height: bar.pct }}
-                              className="w-full bg-emerald-500 group-hover:bg-emerald-600 rounded-lg transition-all duration-500 shadow-sm"
-                            />
-                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[9px] font-bold text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-slate-900 text-white px-1.5 py-0.5 rounded shadow">
-                              {bar.val} views
-                            </span>
-                          </div>
-                          <span className="text-[10px] font-semibold text-slate-500">{bar.day}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Referral source break-down */}
-                  <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                    <h4 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Referral Sources</h4>
-                    <div className="flex flex-col gap-4">
-                      {[
-                        { name: "Geospatial Map Matches", share: "45%", count: "562 views", color: "bg-emerald-500" },
-                        { name: "City & Zip Filters", share: "30%", count: "374 views", color: "bg-blue-500" },
-                        { name: "Specialty Selection", share: "15%", count: "187 views", color: "bg-indigo-500" },
-                        { name: "Direct URLs & Shares", share: "10%", count: "125 views", color: "bg-purple-500" },
-                      ].map((ref, idx) => (
-                        <div key={idx}>
-                          <div className="flex justify-between items-center text-[10px] mb-1">
-                            <strong className="text-slate-700 font-bold">{ref.name}</strong>
-                            <span className="text-slate-400 font-semibold">{ref.share} &bull; {ref.count}</span>
-                          </div>
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div style={{ width: ref.share }} className={`h-full ${ref.color} rounded-full`} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Geographic Reach & Origin breakdown */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                  <h4 className="font-display font-bold text-sm text-slate-900 mb-4 border-b border-slate-100 pb-2">Geographic Reach Breakdown</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    {[
-                      { city: "Karachi, Pakistan", reach: "55%", description: "Largest share of radius query referrals, matching near central clinics." },
-                      { city: "Lahore, Pakistan", reach: "28%", description: "Active telemetry matches resolved from direct city search tags." },
-                      { city: "Islamabad, Pakistan", reach: "17%", description: "High average rating conversions based on hybrid virtual setups." }
-                    ].map((geo, idx) => (
-                      <div key={idx} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl">
-                        <div className="flex justify-between items-center mb-2">
-                          <strong className="text-xs font-bold text-slate-900">{geo.city}</strong>
-                          <span className="text-xs font-black text-emerald-600">{geo.reach}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 leading-relaxed">{geo.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            )}
+            {activeTab === "analytics" && <AnalyticsDashboard doctorId={doc.id} />}
 
           </main>
         </div>

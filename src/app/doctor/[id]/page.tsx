@@ -100,6 +100,22 @@ export default function DoctorProfilePage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDoctor();
+
+    // Fire Profile View Analytics Event
+    const sessionId = localStorage.getItem("visitor_session") || Math.random().toString(36).substring(2, 15);
+    localStorage.setItem("visitor_session", sessionId);
+
+    fetch("/api/analytics/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        doctorId: id,
+        eventType: "PROFILE_VIEW",
+        source: "DIRECT",
+        city: "Unknown", 
+        sessionId
+      })
+    }).catch(err => console.error("Tracking failed", err));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 

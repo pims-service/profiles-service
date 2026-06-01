@@ -14,6 +14,21 @@ export async function POST(request: Request) {
       );
     }
 
+    const ratingInt = parseInt(rating);
+    if (isNaN(ratingInt) || ratingInt < 1 || ratingInt > 5) {
+      return NextResponse.json(
+        { success: false, error: "Rating must be a whole number between 1 and 5." },
+        { status: 400 }
+      );
+    }
+
+    if (comment.length > 1000) {
+      return NextResponse.json(
+        { success: false, error: "Comment must be under 1000 characters." },
+        { status: 400 }
+      );
+    }
+
     const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
 
     if (isMockMode) {
@@ -31,15 +46,26 @@ export async function POST(request: Request) {
       });
     }
 
-    // 1. Create the new review in the subcollection
+    // 1. Check if psychiatrist exists
     const docRef = db.collection("psychiatrists").doc(psychiatristId);
+    if (!isMockMode) {
+      const doctorCheck = await docRef.get();
+      if (!doctorCheck.exists) {
+        return NextResponse.json(
+          { success: false, error: "Target provider does not exist." },
+          { status: 404 }
+        );
+      }
+    }
+
+    // 2. Create the new review in the subcollection
     const reviewRef = docRef.collection("reviews").doc();
 
     const reviewData = {
       id: reviewRef.id,
       psychiatristId,
       patientName,
-      rating: parseInt(rating),
+      rating: ratingInt,
       comment,
       isApproved: true,
       createdAt: new Date(),
