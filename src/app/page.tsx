@@ -50,6 +50,7 @@ export default function SearchDirectory() {
   const [format, setFormat] = useState("ANY");
   const [maxFee, setMaxFee] = useState("400");
   const [sort, setSort] = useState("best_match");
+  const [limit, setLimit] = useState("40");
 
   // State
   const [doctors, setDoctors] = useState<DoctorResult[]>([]);
@@ -83,6 +84,7 @@ export default function SearchDirectory() {
         setLat(position.coords.latitude);
         setLng(position.coords.longitude);
         setLocation("Current GPS Location");
+        setSort("distance"); // Automatically sort by distance when GPS is active!
         setLocationStatus("SUCCESS");
       },
       (error) => {
@@ -103,7 +105,8 @@ export default function SearchDirectory() {
         insurance,
         format,
         maxFee,
-        sort
+        sort,
+        limit
       });
 
       if (lat && lng) {
@@ -127,7 +130,7 @@ export default function SearchDirectory() {
 
   useEffect(() => {
     fetchResults();
-  }, [location, lat, lng, distance, specialty, insurance, format, maxFee, sort]);
+  }, [location, lat, lng, distance, specialty, insurance, format, maxFee, sort, limit]);
 
   // Handle appointment booking
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -183,12 +186,9 @@ export default function SearchDirectory() {
       {/* Spaced, Elegant Human-Crafted Hero Search Area */}
       <section className="bg-white border-b border-slate-200/80 py-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight mb-4 text-slate-900 leading-tight">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight mb-8 text-slate-900 leading-tight">
             Find a psychologist or psychiatrist near you
           </h1>
-          <p className="text-slate-500 text-sm sm:text-base mb-8 max-w-xl mx-auto leading-relaxed">
-            Search verified mental health practitioners in Pakistan. Automatically find clinics near your coordinates or input your city manually to book available slots.
-          </p>
 
           {/* Minimalist Search Input Bar */}
           <div className="bg-white border border-slate-200/80 p-2.5 rounded-2xl max-w-3xl mx-auto flex flex-col md:flex-row gap-2.5 shadow-md shadow-slate-100/50">
@@ -242,22 +242,6 @@ export default function SearchDirectory() {
                 <option value="50">50 Miles</option>
                 <option value="100">100 Miles</option>
                 <option value="250">250 Miles</option>
-              </select>
-            </div>
-
-            <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
-
-            {/* Session Format Filter */}
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 font-medium">Format:</span>
-              <select
-                value={format}
-                onChange={(e) => setFormat(e.target.value)}
-                className="bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5 font-semibold text-slate-700 cursor-pointer outline-none focus:border-slate-400 focus:bg-white transition-all"
-              >
-                <option value="ANY">Any Format</option>
-                <option value="TELEHEALTH">Virtual Only</option>
-                <option value="IN_PERSON">In-Person Only</option>
               </select>
             </div>
 

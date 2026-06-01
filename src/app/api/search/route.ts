@@ -19,6 +19,7 @@ export async function GET(request: Request) {
     const minFee = parseFloat(searchParams.get("minFee") || "0");
     const maxFee = parseFloat(searchParams.get("maxFee") || "9999");
     const sortBy = searchParams.get("sort") || "best_match";
+    const limit = parseInt(searchParams.get("limit") || "40");
 
     const isMockMode = !process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY.includes("your-private-key");
 
@@ -264,12 +265,20 @@ export async function GET(request: Request) {
       results.sort((a, b) => b.sessionFee - a.sessionFee);
     } else {
       // Default market sorting: sponsored first, then profile searchScore
-      results.sort((a, b) => {
-        if (a.isSponsored && !b.isSponsored) return -1;
-        if (!a.isSponsored && b.isSponsored) return 1;
-        return b.computedScore - a.computedScore;
-      });
+      // If we have originCoords, let's sort by distance as default (nearest first)
+      if (originCoords) {
+        results.sort((a, b) => a.computedDistance - b.computedDistance);
+      } else {
+        results.sort((a, b) => {
+          if (a.isSponsored && !b.isSponsored) return -1;
+          if (!a.isSponsored && b.isSponsored) return 1;
+          return b.computedScore - a.computedScore;
+        });
+      }
     }
+
+    // 6. Apply Limit Slicing
+    results = results.slice(0, limit);
 
     return NextResponse.json({
       success: true,
