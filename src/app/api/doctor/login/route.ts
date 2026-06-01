@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebaseAdmin";
+import { db, auth } from "@/lib/firebaseAdmin";
 
 export async function POST(request: Request) {
   try {
@@ -53,6 +53,15 @@ export async function POST(request: Request) {
     }
 
     const uid = data.localId;
+
+    // Verify Email Status via Admin SDK
+    const authUser = await auth.getUser(uid);
+    if (!authUser.emailVerified) {
+      return NextResponse.json(
+        { success: false, error: "Please verify your email address before logging in. Check your inbox." },
+        { status: 403 }
+      );
+    }
 
     // Fetch user details from Firestore
     const userSnap = await db.collection("users").doc(uid).get();

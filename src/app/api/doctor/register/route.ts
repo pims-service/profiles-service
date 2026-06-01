@@ -159,6 +159,31 @@ export async function POST(request: Request) {
     // Set custom role claim for authorization
     await adminAuth.setCustomUserClaims(uid, { role: "PSYCHIATRIST" });
 
+    // 4.1 Trigger Email Verification via REST API
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
+    if (apiKey && apiKey !== "your-api-key" && apiKey !== "mock-api-key") {
+      try {
+        // Sign in briefly to get ID token
+        const signInRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, returnSecureToken: true }),
+        });
+        
+        if (signInRes.ok) {
+          const signInData = await signInRes.json();
+          // Send verification email
+          await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ requestType: "VERIFY_EMAIL", idToken: signInData.idToken }),
+          });
+        }
+      } catch (emailErr) {
+        console.error("Failed to trigger email verification:", emailErr);
+      }
+    }
+
     // 5. Database writes inside Firestore collections
     // Write user profile metadata
     await adminDb.collection("users").doc(uid).set({
