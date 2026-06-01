@@ -124,6 +124,32 @@ export async function POST(request: Request) {
       });
     }
 
+    // 0. Initial Data Integrity & Validation Checks
+    if (!name || !email || !password || !licenseType || !licenseState || !licenseNumber || !npiNumber || !clinicName || !address || !city || !state || !zipCode) {
+      return NextResponse.json({ success: false, error: "Missing required clinical provider fields. Please complete the form entirely." }, { status: 400 });
+    }
+    
+    if (password.length < 8) {
+      return NextResponse.json({ success: false, error: "Password must be at least 8 characters long for security." }, { status: 400 });
+    }
+
+    const trimmedNpi = npiNumber.toString().trim();
+    const trimmedLicense = licenseNumber.toString().trim();
+    if (!trimmedNpi || !trimmedLicense) {
+      return NextResponse.json({ success: false, error: "Invalid NPI or License number format." }, { status: 400 });
+    }
+
+    // Check Uniqueness Constraints
+    const npiQuery = await adminDb.collection("psychiatrists").where("npiNumber", "==", trimmedNpi).limit(1).get();
+    if (!npiQuery.empty) {
+      return NextResponse.json({ success: false, error: "A provider with this NPI number is already registered in our system." }, { status: 400 });
+    }
+
+    const licenseQuery = await adminDb.collection("psychiatrists").where("licenseNumber", "==", trimmedLicense).limit(1).get();
+    if (!licenseQuery.empty) {
+      return NextResponse.json({ success: false, error: "A provider with this License number is already registered in our system." }, { status: 400 });
+    }
+
     // 1. Check duplicate email in Firebase Auth
     try {
       await adminAuth.getUserByEmail(email);

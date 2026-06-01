@@ -73,6 +73,24 @@ export async function PUT(request: Request) {
 
     const profile = docSnap.data()!;
 
+    // Perform Uniqueness Checks for NPI and License (excluding self)
+    const newNpi = npiNumber !== undefined ? npiNumber.toString().trim() : profile.npiNumber;
+    const newLicense = licenseNumber !== undefined ? licenseNumber.toString().trim() : profile.licenseNumber;
+
+    if (newNpi && newNpi !== profile.npiNumber) {
+      const npiQuery = await db.collection("psychiatrists").where("npiNumber", "==", newNpi).limit(1).get();
+      if (!npiQuery.empty) {
+        return NextResponse.json({ success: false, error: "A provider with this NPI number is already registered in our system." }, { status: 400 });
+      }
+    }
+
+    if (newLicense && newLicense !== profile.licenseNumber) {
+      const licenseQuery = await db.collection("psychiatrists").where("licenseNumber", "==", newLicense).limit(1).get();
+      if (!licenseQuery.empty) {
+        return NextResponse.json({ success: false, error: "A provider with this License number is already registered in our system." }, { status: 400 });
+      }
+    }
+
     // Perform User Display Name updates
     if (name) {
       try {
